@@ -6,6 +6,7 @@ gem 'rails', '3.2.8'
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
 
 gem 'haml'
+gem 'rdiscount'
 gem 'sass'
 gem 'jquery-rails'
 
