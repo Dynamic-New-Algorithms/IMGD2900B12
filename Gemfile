@@ -7,7 +7,6 @@ gem 'rails', '3.2.8'
 
 gem 'haml'
 gem 'sass'
-gem 'sqlite3'
 gem 'jquery-rails'
 
 # Gems used only for assets and not required
@@ -23,6 +22,9 @@ group :assets do
 end
 
 
+group :development, :test do
+  gem 'sqlite3'
+end
 # To use ActiveModel has_secure_password
 # gem 'bcrypt-ruby', '~> 3.0.0'
 
