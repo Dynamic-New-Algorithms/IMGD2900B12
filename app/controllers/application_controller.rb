@@ -1,3 +1,6 @@
 class ApplicationController < ActionController::Base
-  protect_from_forgery
+  def home
+    puts 'called here ------------------------------ '
+    render '/home.html.haml'
+  end
 end
