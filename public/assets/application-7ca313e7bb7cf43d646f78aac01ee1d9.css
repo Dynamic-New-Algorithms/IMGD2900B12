@@ -1,0 +1,101 @@
+/*
+ * This is a manifest file that'll be compiled into application.css, which will include all the files
+ * listed below.
+ *
+ * Any CSS and SCSS file within this directory, lib/assets/stylesheets, vendor/assets/stylesheets,
+ * or vendor/assets/stylesheets of plugins, if any, can be referenced here using a relative path.
+ *
+ * You're free to add application-wide styles to this file and they'll appear at the top of the
+ * compiled file, but it's generally better to create a new file per style scope.
+ *
+
+
+ */
+
+/* line 3, ../../app/assets/stylesheets/home.css.sass */
+body {
+  background-color: #333333;
+  margin: 0px;
+  padding: 1px;
+  border: 0px;
+}
+
+/* line 9, ../../app/assets/stylesheets/home.css.sass */
+#header {
+  text-align: center;
+  background-color: black;
+  padding: 1px;
+  width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* line 16, ../../app/assets/stylesheets/home.css.sass */
+#header h1 {
+  color: lime;
+}
+/* line 18, ../../app/assets/stylesheets/home.css.sass */
+#header p {
+  color: yellow;
+}
+
+/* line 21, ../../app/assets/stylesheets/home.css.sass */
+#footer {
+  width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  background-color: black;
+  padding: 1px;
+  color: yellow;
+}
+
+/* line 31, ../../app/assets/stylesheets/home.css.sass */
+#body {
+  width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1px;
+  background-color: black;
+}
+/* line 39, ../../app/assets/stylesheets/home.css.sass */
+#body p {
+  color: white;
+  padding-left: 25px;
+}
+/* line 42, ../../app/assets/stylesheets/home.css.sass */
+#body h2 {
+  color: lime;
+}
+/* line 44, ../../app/assets/stylesheets/home.css.sass */
+#body a {
+  color: cyan;
+}
+/* line 46, ../../app/assets/stylesheets/home.css.sass */
+#body a:visited {
+  color: blue;
+}
+/* line 49, ../../app/assets/stylesheets/home.css.sass */
+#body #status {
+  width: 480px;
+  font-size: 18pt;
+  text-align: center;
+  border: 0;
+  margin-left: 110px;
+  margin-top: 32px;
+  margin-bottom: 16px;
+}
+/* line 58, ../../app/assets/stylesheets/home.css.sass */
+#body #footer {
+  color: #999999;
+  width: 480px;
+  font-size: 9pt;
+  text-align: center;
+}
+/* line 64, ../../app/assets/stylesheets/home.css.sass */
+#body #screen {
+  margin-left: 110px;
+}
+/* line 67, ../../app/assets/stylesheets/home.css.sass */
+#body #debug {
+  margin-left: 110px;
+}
