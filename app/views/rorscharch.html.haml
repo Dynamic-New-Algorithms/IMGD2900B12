@@ -15,8 +15,8 @@
   
   You may have received a copy of the GNU Lesser General Public License
   along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
-- content_for :javascript_includes do
-  = javascript_include_tag "games/Rorschach.js"
+/- content_for :javascript_includes do
+/ = javascript_include_tag "Rorschach.js"
 %body{:onkeydown => "return PS.SysKeyDown(event);", :onkeyup => "return PS.SysKeyUp(event);", :onload => "PS.Sys();"}
   #main
     %input#status.noselect{:name => "status", :readonly => "", :type => "text", :value => "Perlenspiel"}
