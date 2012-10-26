@@ -1,6 +1,9 @@
 class ApplicationController < ActionController::Base
   def home
-    puts 'called here ------------------------------ '
     render '/home.html.haml'
+  end
+
+  def rorschach
+    render '/rorscharch.html.haml'
   end
 end

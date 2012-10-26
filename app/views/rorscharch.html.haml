@@ -1,0 +1,26 @@
+/
+  Perlenspiel is a scheme by Professor Moriarty (bmoriarty@wpi.edu).
+  Perlenspiel is Copyright © 2009-12 Worcester Polytechnic Institute.
+  This file is part of Perlenspiel.
+  
+  Perlenspiel is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as published
+  by the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+  
+  Perlenspiel is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU Lesser General Public License for more details.
+  
+  You may have received a copy of the GNU Lesser General Public License
+  along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
+- content_for :javascript_includes do
+  = javascript_include_tag "games/Rorschach.js"
+%body{:onkeydown => "return PS.SysKeyDown(event);", :onkeyup => "return PS.SysKeyUp(event);", :onload => "PS.Sys();"}
+  #main
+    %input#status.noselect{:name => "status", :readonly => "", :type => "text", :value => "Perlenspiel"}
+    %canvas#screen.noselect{:height => "480", :name => "screen", :width => "480"} No HTML5 canvas!
+    %p#footer{:name => "version"}
+  #debug{:name => "debug", :style => "display: none;"}
+    %textarea#monitor{:cols => "57", :name => "monitor", :readonly => "true", :rows => "8", :wrap => "soft"}
