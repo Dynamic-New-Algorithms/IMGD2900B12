@@ -32,7 +32,9 @@ class dot
 GRID_SIZE = 32
 
 dot = new dot(GRID_SIZE/2,GRID_SIZE/2)
+
 #------------------------------------------ Events -----------------------------------------
+
 PS.Init = ->
   # change to the dimensions you want
   PS.GridSize GRID_SIZE, GRID_SIZE

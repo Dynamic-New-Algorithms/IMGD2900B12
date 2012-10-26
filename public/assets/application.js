@@ -9868,102 +9868,6 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
   }
 
 })( jQuery );
-
-/* oppen to puplic use
-*/
-
-
-(function() {
-  var GRID_SIZE, dot;
-
-  dot = (function() {
-
-    function dot(x, y) {
-      this.x = Math.floor(x);
-      this.y = Math.floor(y);
-    }
-
-    dot.prototype.update = function() {
-      this.x = Math.abs((this.x + Math.floor(Math.random() * 2 + 1) - Math.floor(Math.random() * 2 + 1)) % GRID_SIZE);
-      return this.y = Math.abs((this.y + Math.floor(Math.random() * 2 + 1) - Math.floor(Math.random() * 2 + 1)) % GRID_SIZE);
-    };
-
-    dot.prototype.draw = function() {
-      var c;
-      c = PS.BeadColor(this.x, this.y);
-      c = PS.UnmakeRGB(c);
-      c = PS.MakeRGB(Math.abs(c.r - 255), Math.abs(c.g - 255), Math.abs(c.b - 255));
-      PS.BeadColor(this.x, this.y, Math.abs(c - 1));
-      c = PS.BeadColor((GRID_SIZE - 1) - this.x, this.y);
-      c = PS.UnmakeRGB(c);
-      c = PS.MakeRGB(Math.abs(c.r - 255), Math.abs(c.g - 255), Math.abs(c.b - 255));
-      PS.BeadColor((GRID_SIZE - 1) - this.x, this.y, Math.abs(c - 1));
-      c = PS.BeadColor((GRID_SIZE - 1) - this.x, (GRID_SIZE - 1) - this.y);
-      c = PS.UnmakeRGB(c);
-      c = PS.MakeRGB(Math.abs(c.r - 255), Math.abs(c.g - 255), Math.abs(c.b - 255));
-      PS.BeadColor((GRID_SIZE - 1) - this.x, (GRID_SIZE - 1) - this.y, Math.abs(c - 1));
-      c = PS.BeadColor(this.x, (GRID_SIZE - 1) - this.y);
-      c = PS.UnmakeRGB(c);
-      c = PS.MakeRGB(Math.abs(c.r - 255), Math.abs(c.g - 255), Math.abs(c.b - 255));
-      return PS.BeadColor(this.x, (GRID_SIZE - 1) - this.y, Math.abs(c - 1));
-    };
-
-    return dot;
-
-  })();
-
-  GRID_SIZE = 32;
-
-  dot = new dot(GRID_SIZE / 2, GRID_SIZE / 2);
-
-  PS.Init = function() {
-    PS.GridSize(GRID_SIZE, GRID_SIZE);
-    PS.StatusText("Rorschach");
-    return PS.Clock(10);
-  };
-
-  PS.Click = function(x, y, data) {
-    "use strict";
-
-    var c;
-    PS.BeadColor(x, y, 0xff0000);
-    PS.AudioPlay("fx_click");
-    c = PS.BeadColor(x, y);
-    c = PS.UnmakeRGB(c);
-    return alert(c.r);
-  };
-
-  PS.Release = function(x, y, data) {
-    return "use strict";
-  };
-
-  PS.Enter = function(x, y, data) {
-    return "use strict";
-  };
-
-  PS.Leave = function(x, y, data) {
-    return "use strict";
-  };
-
-  PS.KeyDown = function(key, shift, ctrl) {
-    return "use strict";
-  };
-
-  PS.KeyUp = function(key, shift, ctrl) {
-    return "use strict";
-  };
-
-  PS.Wheel = function(dir) {
-    return "use strict";
-  };
-
-  PS.Tick = function() {
-    "use strict";
-    dot.update();
-    return dot.draw();
-  };
-
-}).call(this);
 // This is a manifest file that'll be compiled into application.js, which will include all the files
 // listed below.
 //
@@ -9976,7 +9880,6 @@ if ( typeof define === "function" && define.amd && define.amd.jQuery ) {
 // WARNING: THE FIRST BLANK LINE MARKS THE END OF WHAT'S TO BE PROCESSED, ANY BLANK LINE SHOULD
 // GO AFTER THE REQUIRES BELOW.
 //
-
 
 
 ;

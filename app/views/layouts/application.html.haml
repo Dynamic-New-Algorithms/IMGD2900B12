@@ -2,10 +2,10 @@
 %html
   %head
     %title Dynamic New Algorithms
-    %script{:src => "http://users.wpi.edu/~bmoriarty/ps/ps2.1.js", :type => "text/javascript"}
 
     = stylesheet_link_tag    "application", :media => "all"
-    = javascript_include_tag "application"
+    //= javascript_include_tag "application"
+    =javascript_include_tag "http://users.wpi.edu/~bmoriarty/ps/ps2.1.js"
     = yield :javascript_includes
     = csrf_meta_tags
   %body
