@@ -1,2 +1,2 @@
 jQuery ->
-  alert 'flower'
+  #alert 'flower'

@@ -13,4 +13,4 @@
 //= require jquery
 //= require jquery_ujs
 //= require ps2.1.dna.js
-//= require Rorschach
+//= require_tree .
