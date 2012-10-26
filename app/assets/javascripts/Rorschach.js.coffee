@@ -29,7 +29,7 @@ class dot
     PS.BeadColor @x, (GRID_SIZE-1)-@y, Math.abs(c-1)
 
 #------------------------------------------ Constants -----------------------------------------
-GRID_SIZE = 32
+GRID_SIZE = 64
 
 dot = new dot(GRID_SIZE/2,GRID_SIZE/2)
 
@@ -39,6 +39,8 @@ PS.Init = ->
   # change to the dimensions you want
   PS.GridSize GRID_SIZE, GRID_SIZE
   PS.StatusText "Rorschach"
+  #hide the borders
+  PS.BeadBorderWidth PS.ALL, PS.ALL, 0
   #start the clock
   PS.Clock(10)
 
@@ -46,9 +48,6 @@ PS.Click = (x, y, data) ->
   "use strict"
   PS.BeadColor x, y, 0xff0000
   PS.AudioPlay "fx_click"
-  c = PS.BeadColor x, y
-  c = PS.UnmakeRGB(c)
-  alert c.r
   # put code here for bead clicks
 
 
