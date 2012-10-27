@@ -29,7 +29,7 @@ var PS = {
 
     // Constants
 
-    VERSION: "2.1.00",
+    VERSION: "2.1.dna",
     DEFAULT: -1, // use default value
     CURRENT: -2, // use current value
     ALL: -3, // Use all rows or columns
@@ -2592,7 +2592,7 @@ PS.DebugClear = function ()
     if ( e )
     {
         e.style.color="#000000"; // change to black
-        e.innerHTML = "Version 2.0.0";
+        e.innerHTML = "Version 2.1.dna";
     }
 
     if ( PS.DebugWindow )

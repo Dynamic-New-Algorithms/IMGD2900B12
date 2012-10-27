@@ -6,4 +6,8 @@ class ApplicationController < ActionController::Base
   def rorschach
     render '/rorscharch.html.haml'
   end
+
+  def flowers
+    render '/flowers.html.haml'
+  end
 end

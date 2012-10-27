@@ -3,6 +3,7 @@ WebSite::Application.routes.draw do
   root :to => 'application#home'
 
   match '/rorschach' => 'application#rorschach'
+  match '/flowers' => 'application#flowers'
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

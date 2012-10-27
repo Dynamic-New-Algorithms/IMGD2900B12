@@ -1,4 +1,4 @@
-
+%p#name Flowers
 %body{:onkeydown => "return PS.SysKeyDown(event);", :onkeyup => "return PS.SysKeyUp(event);", :onload => "PS.Sys();"}
   #main
     %input#status.noselect{:name => "status", :readonly => "", :type => "text", :value => "Perlenspiel"}
@@ -6,3 +6,8 @@
     %p#footer{:name => "version"}
   #debug{:name => "debug", :style => "display: none;"}
     %textarea#monitor{:cols => "57", :name => "monitor", :readonly => "true", :rows => "8", :wrap => "soft"}
+#description
+  %h2 Flowers
+  %p
+    :markdown
+      Lets grow some flowers
