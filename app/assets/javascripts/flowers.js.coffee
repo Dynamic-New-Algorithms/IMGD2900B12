@@ -28,9 +28,9 @@ jQuery ->
         @y = Math.min(Math.max(y,1),GRID_SIZE-3)
         @moved = true
 
-    class seed
+    class leaf
 
-      constructor: () ->
+      constructor: (x,y,life) ->
         @x = -1
         @y = -1
 
@@ -39,6 +39,8 @@ jQuery ->
 
     #------------------------------------------ Constants -----------------------------------------
     GRID_SIZE = 16
+    LIFE_CAP
+    LIFE_MIN
 
     sun = new sun()
 
