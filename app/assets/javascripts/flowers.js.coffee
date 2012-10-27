@@ -121,7 +121,14 @@ jQuery ->
       die: () ->
         if @life >= LEAF_LIFE_CAP
           north = PS.BeadData(@x,@y-1)
-          if north == undefined or north == null or north == 0
+          east =  PS.BeadData(Math.max(0,@x-1),@y-1)
+          west =  PS.BeadData(Math.max(0,@x+1),@y-1)
+          north = (north == undefined or north == null or north == 0)
+          east = (east == undefined or east == null or east == 0)
+          east = (east.grow_chance != @grow_chance and east.split_chance != @split_chance) unless east
+          west = (west == undefined or west == null or west == 0)
+          west = (west.grow_chance != @grow_chance and west.split_chance != @split_chance) unless west
+          if north and east and west
             PS.BeadColor(@x,@y,PS.DEFAULT_BG_COLOR)
             PS.BeadData(@x,@y,0)
     class flower
