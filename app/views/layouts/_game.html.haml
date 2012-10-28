@@ -1,0 +1,7 @@
+%body{:onkeydown => "return PS.SysKeyDown(event);", :onkeyup => "return PS.SysKeyUp(event);", :onload => "PS.Sys();"}
+  #main
+    %input#status.noselect{:name => "status", :readonly => "", :type => "text", :value => "Perlenspiel"}
+    %canvas#screen.noselect{:height => "480", :name => "screen", :width => "480"} No HTML5 canvas!
+    %p#footer{:name => "version"}
+  #debug{:name => "debug", :style => "display: none;"}
+    %textarea#monitor{:cols => "57", :name => "monitor", :readonly => "true", :rows => "8", :wrap => "soft"}

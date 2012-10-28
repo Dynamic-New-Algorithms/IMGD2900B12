@@ -121,8 +121,8 @@ jQuery ->
       die: () ->
         if @life >= LEAF_LIFE_CAP
           north = PS.BeadData(@x,@y-1)
-          east =  PS.BeadData(Math.max(0,@x-1),@y-1)
-          west =  PS.BeadData(Math.max(0,@x+1),@y-1)
+          east =  PS.BeadData(Math.max(0,@x-1),@y)
+          west =  PS.BeadData(Math.max(0,@x+1),@y)
           north = (north == undefined or north == null or north == 0)
           east = (east == undefined or east == null or east == 0)
           east = (east.grow_chance != @grow_chance and east.split_chance != @split_chance) unless east
@@ -221,10 +221,15 @@ jQuery ->
 
     PS.Click = (x, y, data) ->
       "use strict"
-      id = PS.BeadData x,y
-      alert id.life
-      if x == sun.x and y == sun.y
-        sun.down = true
+      xi = PS.Random(GRID_SIZE)
+      id = PS.BeadData xi,GRID_SIZE-2
+      if id == undefined or id == null or id == 0
+        col =
+          r: Math.floor(Math.random()*255)
+          g: Math.floor(Math.random()*255)
+          b: Math.floor(Math.random()*255)
+        l = new leaf(xi,GRID_SIZE-2,0,0.5,0.25,0.10,col)
+        PS.BeadData l.x, l.y, l
 
 
     PS.Release = (x, y, data) ->
