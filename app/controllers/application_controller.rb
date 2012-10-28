@@ -18,4 +18,8 @@ class ApplicationController < ActionController::Base
   def composer
     render '/composer.html.haml'
   end
+
+  def letterpop
+    render '/letterpop.html.haml'
+  end
 end

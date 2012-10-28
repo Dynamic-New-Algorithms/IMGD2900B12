@@ -6,6 +6,7 @@ WebSite::Application.routes.draw do
   match '/flowers' => 'application#flowers'
   match '/rubik' => 'application#rubik'
   match '/composer' => 'application#composer'
+  match '/letterpop' => 'application#letterpop'
   # The priority is based upon order of creation:
   # first created -> highest priority.
 
