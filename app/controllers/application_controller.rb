@@ -14,4 +14,8 @@ class ApplicationController < ActionController::Base
   def rubik
     render '/rubik.html.haml'
   end
+
+  def composer
+    render '/composer.html.haml'
+  end
 end

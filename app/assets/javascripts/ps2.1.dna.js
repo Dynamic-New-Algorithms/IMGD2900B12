@@ -1063,10 +1063,19 @@ PS.BeadColor = function (x, y, rgb)
         {
             return PS.ERROR;
         }
-        colors = PS.UnmakeRGB( rgb );
-        r = colors.r;
-        g = colors.g;
-        b = colors.b;
+        if(rgb.r != undefined)
+        {
+           r = rgb.r;
+           g = rgb.g;
+           b = rgb.b;
+
+        } else
+        {
+            colors = PS.UnmakeRGB( rgb );
+            r = colors.r;
+            g = colors.g;
+            b = colors.b;
+        }
     }
 
     if ( x === PS.ALL )
