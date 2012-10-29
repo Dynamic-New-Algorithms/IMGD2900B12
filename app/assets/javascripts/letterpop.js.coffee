@@ -101,7 +101,7 @@ jQuery ->
       Click: (x, y, data) ->
         "use strict"
         if this.is_in(x,y)
-          return @sc
+          return 'None'
         else
           return 'None'
       Enter: (x, y, data) ->
@@ -119,6 +119,7 @@ jQuery ->
               PS.BeadColor x,y,@c
 
     draw_home = () ->
+      o = 'points'
       #Title
       l = ['L','E','T','T','E','R',' ','P','O','P']
       for i in [0..(l.length-1)]
@@ -131,6 +132,43 @@ jQuery ->
       b = new my_button(2,8,11,1,C_2,C_5,'HIGH SCORES','scores')
 
       tb = new my_text_box(2,5,3,1,C_5,C_3,'AAA')
+    draw_score = (order) ->
+      #title
+      l = ['H','I','G','H',' ','S','C','O','R','E','S']
+      for i in [0..(l.length-1)]
+        PS.BeadGlyph Math.floor((GRID_SIZE-l.length) / 2)+i,1, l[i]
+        PS.BeadColor Math.floor((GRID_SIZE-l.length) / 2)+i,1, C_2
+
+      b = new my_button(1,3,1,1,C_2,C_2,'#','None')
+      b = new my_button(3,3,4,1,C_2,C_2,'NAME','None')
+      b = new my_button(8,3,6,1,C_2,C_5,'POINTS','points')
+      b = new my_button(15,3,10,1,C_2,C_5,'DIFFICULTY','difficulty')
+      b = new my_button(1,23,4,1,C_2,C_5,'HOME','home')
+      b = new my_button(15,23,10,1,C_2,C_5,'PLAY AGAIN','play')
+
+      #get the scores
+      url = "/LPHS"
+      json = 'nothing'
+      $.ajax
+        async: false
+        global: false
+        data: {order: order}
+        url: url
+        dataType: "json"
+        success: (d) ->
+          json = d
+      if json != 'nothing'
+        y = 5
+        for i in json
+          c = C_5
+          c = C_2 if y%2 == 0
+          b = new my_button(1,y,1,1,c,c,String(y-4),'None')
+          b = new my_button(3,y,3,1,c,c,i.name,'None')
+          b = new my_button(8,y,6,1,c,c,String(i.points),'None')
+          b = new my_button(15,y,10,1,c,c,String(i.difficulty),'None')
+          y = y + 1
+      else
+        alert 'epic fail'
 
 
     #------------------------------------------ Constants -----------------------------------------
@@ -146,11 +184,20 @@ jQuery ->
     score = 0
     player_name = 'AAA'
     state = 'home' #home,play,score
+    score_order = 'points'
 
     leters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
     #------------------------------------------ Events -----------------------------------------
 
     PS.Init = ->
+      if state == 'home'
+        PS.Clock 0
+        GRID_SIZE = 16
+      else if state == 'scores'
+        PS.Clock 0
+        GRID_SIZE = 26
+      else
+        GRID_SIZE = 16
       # change to the dimensions you want
       PS.GridSize GRID_SIZE, GRID_SIZE
       PS.StatusFade false
@@ -173,7 +220,7 @@ jQuery ->
         draw_home()
       else if state == 'scores'
         PS.Clock 0
-        draw_score()
+        draw_score(score_order)
       else
         dificulty = 0.1
         score = 0
@@ -187,6 +234,9 @@ jQuery ->
         s = data.Click(x,y,data)
         if s != 'None'
           state = s
+          if s == 'points' or s == 'difficulty'
+            score_order = s
+            state = 'scores'
           PS.Init()
 
     PS.Release = (x, y, data) ->
@@ -258,7 +308,19 @@ jQuery ->
                   PS.BeadGlyph x,y, 0
                   PS.AudioPlay( "fx_drip2" )
                   if y == 0
-                    alert 'Score: ' + score
+                    url = "/LPHS/sumbit"
+                    json = 'nothing'
+                    $.ajax
+                      async: false
+                      global: false
+                      data: {name: player_name, points: score, difficulty: Math.floor(1000*dificulty)}
+                      url: url
+                      dataType: "json"
+                      success: (d) ->
+                        json = d
+                    if json != 'nothing'
+                      alert 'High Score!'
+                    state = 'scores'
                     PS.Init()
                 else
                   #PS.BeadFlash x, y+1, false
