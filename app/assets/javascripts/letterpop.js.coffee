@@ -308,6 +308,7 @@ jQuery ->
                   PS.BeadGlyph x,y, 0
                   PS.AudioPlay( "fx_drip2" )
                   if y == 0
+                    PS.Clock 0
                     url = "/LPHS/sumbit"
                     json = 'nothing'
                     $.ajax

@@ -4,22 +4,22 @@ class ApplicationController < ActionController::Base
   end
 
   def rorschach
-    render '/rorscharch.html.haml'
+    render '/Assig3/rorscharch.html.haml'
   end
 
   def flowers
-    render '/flowers.html.haml'
+    render '/Assig3/flowers.html.haml'
   end
 
   def rubik
-    render '/rubik.html.haml'
+    render '/Assig3/rubik.html.haml'
   end
 
   def composer
-    render '/composer.html.haml'
+    render '/Assig3/composer.html.haml'
   end
 
   def letterpop
-    render '/letterpop.html.haml'
+    render '/Assig3/letterpop.html.haml'
   end
 end
