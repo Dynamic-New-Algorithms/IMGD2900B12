@@ -22,4 +22,8 @@ class ApplicationController < ActionController::Base
   def letterpop
     render '/Assig3/letterpop.html.haml'
   end
+
+  def fol
+    render '/Assig3/fountainoflife.html.haml'
+  end
 end

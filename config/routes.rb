@@ -1,7 +1,7 @@
 WebSite::Application.routes.draw do
 
   root :to => 'application#home'
-
+  #assig 3
   match '/rorschach' => 'application#rorschach'
   match '/flowers' => 'application#flowers'
   match '/rubik' => 'application#rubik'
@@ -9,6 +9,7 @@ WebSite::Application.routes.draw do
   match '/letterpop' => 'application#letterpop'
   match '/LPHS/sumbit' => 'ldhs#new'
   match '/LPHS' => 'ldhs#topten'
+  match '/fol' => 'application#fol'
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

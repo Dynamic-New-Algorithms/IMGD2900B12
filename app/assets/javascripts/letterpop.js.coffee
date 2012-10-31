@@ -292,7 +292,10 @@ jQuery ->
     PS.Tick = ->
       "use strict"
       if state == 'play'
+        win = false
         for x in [0..(GRID_SIZE-1)]
+          if win
+            break
           for y in [(GRID_SIZE-2)..0]
             if PS.BeadColor(x,y) != C_2
               #move drops down
@@ -323,6 +326,8 @@ jQuery ->
                       alert 'High Score!'
                     state = 'scores'
                     PS.Init()
+                    win = true
+                    break
                 else
                   #PS.BeadFlash x, y+1, false
                   PS.BeadColor x,y+1, C_5
