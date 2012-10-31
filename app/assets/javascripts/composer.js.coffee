@@ -162,6 +162,32 @@ jQuery ->
         PS.Click key_x,notes[key_n][2]
         MODE = temp
         key_n = -1
+      if key == 32
+        sheet()
+        MODE = 1
+        PS.Click 4,19
+        PS.Click 8,19
+        PS.Click 12,13
+        PS.Click 16,13
+        PS.Click 20,11
+        PS.Click 24,11
+        PS.Click 36,15
+        PS.Click 40,15
+        PS.Click 44,16
+        PS.Click 48,16
+        PS.Click 52,17
+        PS.Click 56,17
+        PS.Click 52,28
+        PS.Click 56,27
+        MODE = 7
+        PS.Click 28,13
+        PS.Click 4,32
+        PS.Click 12,30
+        PS.Click 20,28
+        PS.Click 28,30
+        PS.Click 36,31
+        PS.Click 44,33
+        MODE = 1
 
 
     PS.Wheel = (dir) ->
