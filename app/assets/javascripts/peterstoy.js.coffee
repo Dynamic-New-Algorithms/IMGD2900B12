@@ -6,6 +6,7 @@ jQuery ->
 
       # change to the dimensions you want
       PS.GridSize 1, 1
+      PS.StatusText "Peter's Piano"
       PS.Clock 90
 
 
@@ -22,7 +23,6 @@ jQuery ->
 
     PS.Leave = (x, y, data) ->
       "use strict"
-
 
     PS.KeyDown = (key, shift, ctrl) ->
       "use strict"
@@ -44,6 +44,7 @@ jQuery ->
         PS.BeadGlyph 0, 0, 0
       else if key is 84
         PS.AudioPlay "piano_e4"
+        #0xRRGGBB
         PS.BeadColor 0, 0, 0xFF0000
         PS.BeadGlyph 0, 0, 0
       else if key is 89
@@ -105,4 +106,4 @@ jQuery ->
 
     PS.Tick = ->
       "use strict"
-      PS.AudioPlay "perc_drum_bass"
+      PS.AudioPlay "perc_drum_bass", 0.7
