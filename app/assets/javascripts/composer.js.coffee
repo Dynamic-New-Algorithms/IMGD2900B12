@@ -5,6 +5,11 @@ jQuery ->
     #------------------------------------------ Constants -----------------------------------------
     GRID_SIZE = 64
     MODE = 2
+    key_start = new Date()
+    key_audio = 0
+    key_x = 0
+    key_n = -1
+    key_end = new Date()
     Metrinome = 1
     notes = []
 
@@ -79,6 +84,7 @@ jQuery ->
 
     PS.Click = (x, y, data) ->
       "use strict"
+      drew = false
       if y > 0 and y < 43 and x >2 and x < GRID_SIZE-MODE
         if y%3 != 1 #FACE
           yi = 1
@@ -89,6 +95,7 @@ jQuery ->
           ci = 0xff0000 if c.b == 255
           ci = 0xffffff if c.b == 0
           for ix in [0..MODE]
+            drew = true
             PS.BeadColor x+ix,y, ci
             PS.BeadColor x+ix,y+yi, ci
           PS.BeadColor x+MODE+1,y, 0xffffff
@@ -102,13 +109,16 @@ jQuery ->
           cib = 0x00ff00 if c.g == 0
           cib = 0x000000 if c.g == 255
           for ix in [0..MODE]
+            drew = true
             PS.BeadColor x+ix,y, cib
           PS.BeadColor x+MODE+1,y, 0x000000
           PS.BeadColor x-1,y, 0x000000
       else if y > 45 and y < 55 and x > 9 and x < 10+(y-45)
+        alert 'somthing'
         MODE = (y-46)
         mode()
       #alert c.r
+      #alert drew
 
     PS.Release = (x, y, data) ->
       "use strict"
@@ -121,9 +131,39 @@ jQuery ->
 
     PS.KeyDown = (key, shift, ctrl) ->
       "use strict"
+      if ((key >=65 and key <=71) or (key >= 97 and key <= 103)) and key_n == -1 and key != 16 and key != 17
+        key_n = 0
+        if key >= 65 and key <= 71
+          if ctrl
+            key_n = key - 52
+            key_n = key_n + 7 if key_n < 15
+          else
+            key_n = key - 59
+            key_n = key_n + 7 if key_n < 8
+        else if key >= 97 and key <= 103
+          key_n = key - 98
+          key_n = key_n + 7 if key_n < 1
+        key_start = new Date()
+        key_x = Metrinome
+        #key_n = Math.abs(key_n - (notes.length-1))
+        #alert notes[key_n][1]
+        key_audio = PS.AudioPlay notes[key_n][1]
 
     PS.KeyUp = (key, shift, ctrl) ->
       "use strict"
+      if key_n != -1
+        PS.AudioStop key_audio
+        key_end = new Date()
+        t = new Date()
+        t.setTime key_end.getTime() - key_start.getTime()
+        t = t.getMilliseconds() + t.getSeconds() * 1000
+        t = Math.floor(t/250)
+        temp = MODE
+        MODE = t
+        PS.Click key_x,notes[key_n][2]
+        MODE = temp
+        key_n = -1
+
 
     PS.Wheel = (dir) ->
       "use strict"
