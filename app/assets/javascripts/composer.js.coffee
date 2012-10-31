@@ -114,7 +114,6 @@ jQuery ->
           PS.BeadColor x+MODE+1,y, 0x000000
           PS.BeadColor x-1,y, 0x000000
       else if y > 45 and y < 55 and x > 9 and x < 10+(y-45)
-        alert 'somthing'
         MODE = (y-46)
         mode()
       #alert c.r
