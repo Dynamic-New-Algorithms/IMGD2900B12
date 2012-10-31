@@ -10,6 +10,7 @@ WebSite::Application.routes.draw do
   match '/LPHS/sumbit' => 'ldhs#new'
   match '/LPHS' => 'ldhs#topten'
   match '/fol' => 'application#fol'
+  match '/peterstoy' => 'application#peterstoy'
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

@@ -26,4 +26,8 @@ class ApplicationController < ActionController::Base
   def fol
     render '/Assig3/fountainoflife.html.haml'
   end
+
+  def peterstoy
+    render '/Assig3/peterstoy.html.haml'
+  end
 end
