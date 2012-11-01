@@ -4,15 +4,17 @@ jQuery ->
     #------------------------------------ Classes -------------------------------------
     #------------------------------------------ Constants -----------------------------------------
     GRID_SIZE = 64
-    MODE = 2
+    MODE = 2 #how long do new notes play for
+    #key pressing stuff
     key_start = new Date()
     key_audio = 0
     key_x = 0
     key_n = -1
     key_end = new Date()
-    Metrinome = 1
-    notes = []
 
+    Metrinome = 1 #where the time is
+    notes = [] # piano scale
+    # build the lines for the music to be played on
     sheet = ->
       for y in [4..16]
         for x in [1..(GRID_SIZE-1)]
@@ -27,7 +29,7 @@ jQuery ->
             PS.BeadColor x,y, 0x000000
           else
             PS.BeadColor x,y, 0xffffff
-
+    #draw the mode triangle to people can chose how long new notes are played
     mode = ->
       m = MODE
       c = 0x0000ff
@@ -39,7 +41,7 @@ jQuery ->
         for x in [10..(10+xi)]
           PS.BeadColor x,y, sc
         xi += 1
-
+    #create the notes
     load_scale = ->
       y = 41
       i = 1
@@ -85,6 +87,7 @@ jQuery ->
     PS.Click = (x, y, data) ->
       "use strict"
       drew = false
+      #if it is in the music sheet
       if y > 0 and y < 43 and x >2 and x < GRID_SIZE-MODE
         if y%3 != 1 #FACE
           yi = 1
@@ -113,7 +116,7 @@ jQuery ->
             PS.BeadColor x+ix,y, cib
           PS.BeadColor x+MODE+1,y, 0x000000
           PS.BeadColor x-1,y, 0x000000
-      else if y > 45 and y < 55 and x > 9 and x < 10+(y-45)
+      else if y > 45 and y < 55 and x > 9 and x < 10+(y-45) #if it is in mode select
         MODE = (y-46)
         mode()
       #alert c.r
@@ -130,6 +133,7 @@ jQuery ->
 
     PS.KeyDown = (key, shift, ctrl) ->
       "use strict"
+      #if it is a good key and we haven't started to play yet
       if ((key >=65 and key <=71) or (key >= 97 and key <= 103)) and key_n == -1 and key != 16 and key != 17
         key_n = 0
         if key >= 65 and key <= 71
@@ -150,6 +154,7 @@ jQuery ->
 
     PS.KeyUp = (key, shift, ctrl) ->
       "use strict"
+      #if we have started to play
       if key_n != -1
         PS.AudioStop key_audio
         key_end = new Date()
@@ -162,7 +167,7 @@ jQuery ->
         PS.Click key_x,notes[key_n][2]
         MODE = temp
         key_n = -1
-      if key == 32
+      if key == 32  #Twinkle Twinkle
         sheet()
         MODE = 1
         PS.Click 4,19
