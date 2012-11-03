@@ -28,7 +28,7 @@ jQuery ->
       "use strict"
       if key is 81
         PS.AudioPlay "piano_a3"
-        PS.BeadColor 0, 0, 0x000000
+        PS.BeadColor 0, 0, 0x00ffff
         PS.BeadGlyph 0, 0, 0
       else if key is 87
         PS.AudioPlay "piano_b3"
