@@ -12,5 +12,5 @@
 //
 //= require jquery
 //= require jquery_ujs
-//= require ps2.1.dna.js
+//= require ps2.2.dna.js
 //= require_tree .

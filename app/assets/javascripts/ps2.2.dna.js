@@ -1,4 +1,4 @@
-// ps2.1.js for Perlenspiel 2.1
+// ps2.2.js for Perlenspiel 2.2
 
 /*
  Perlenspiel is a scheme by Professor Moriarty (bmoriarty@wpi.edu).
@@ -21,6 +21,7 @@
 
 // The following comments are for JSLint
 
+/*jslint nomen: true, white: true */
 /*global document, window, Audio, Image */
 
 // Global namespace variable
@@ -29,11 +30,13 @@ var PS = {
 
     // Constants
 
-    VERSION: "2.1.dna",
-    DEFAULT: -1, // use default value
-    CURRENT: -2, // use current value
-    ALL: -3, // Use all rows or columns
-    ERROR: "*ERROR*", // generic error return value
+    VERSION: "2.2.dna",
+    ERROR: "ERROR", // generic error return value
+    DEFAULT: "DEFAULT", // use default value
+    CURRENT: "CURRENT", // use current value
+    ALL: "ALL", // Use all rows or columns
+    EMPTY: "EMPTY", // default bead state (color unassigned)
+
     CANVAS_SIZE: 480, // max width/height of canvas
     GRID_MAX: 64, // max x/y dimensions of grid
     GRID_DEFAULT_WIDTH: 8,
@@ -61,10 +64,9 @@ var PS = {
     DEFAULT_FLASH_GREEN: 0xFF,
     DEFAULT_FLASH_BLUE: 0xFF,
     DEFAULT_ALPHA: 100, // must be between 0 and 100
-    DEFAULT_VOLUME: 1.0, // must be between 0 and 1.0
-    DEFAULT_LOOP: false,
-    DEFAULT_FPS: 10, // frame rate in milliseconds (1/100 sec)
+    DEFAULT_FPS: 17, // maximum frame rate in milliseconds (about 1/60th of a second)
     REDSHIFT: 256 * 256, // used to decode rgb
+    GREENSHIFT: 256, // used to decode rgb
     FLASH_STEP: 10, // percent for each flash
     STATUS_FLASH_STEP: 5, // percent for each step
     FLASH_INTERVAL: 5, // number of ticks per flash step
@@ -142,6 +144,36 @@ var PS = {
     StatusBlue: 0,
     StatusPhase: 0, // 100: done fading
     StatusFading: true
+};
+
+// Sound system namespace
+
+var Sound = {
+
+    // constants
+
+    ERROR: "ERROR", // this value should be same as host error value
+    DEFAULT: "DEFAULT", // this value should be same as host default value
+
+    MODE_OFF: "SOUND::OFF",
+    MODE_ON: "SOUND::ON",
+
+    // channel states
+
+    EMPTY: "SOUND::EMPTY",
+    LOADING: "SOUND::LOADING",
+    READY: "SOUND::READY",
+    ACTIVE: "SOUND::ACTIVE",
+
+    DEFAULT_PATH: "http://users.wpi.edu/~bmoriarty/ps/audio/",
+    DEFAULT_VOLUME: 1.0,
+    MAX_CHANNELS: 32,
+
+    Mode: 0, // audio mode: 0 = off, 1 = on
+    Path: "http://users.wpi.edu/~bmoriarty/ps/audio/", // current audio path
+    Count: 0,
+    Channels: [],
+    Tracks: []
 };
 
 // Improved typeof that distinguishes arrays
@@ -242,7 +274,11 @@ PS.UnmakeRGB = function ( rgb )
 
     if ( typeof rgb !== "number" )
     {
-        PS.Oops(fn + "RGB parameter not a number");
+        if (typeof rgb == 'string' && rgb == 'EMPTY')
+        {
+            return { r: PS.DEFAULT_BEAD_RED, g: PS.DEFAULT_BEAD_GREEN, b: PS.DEFAULT_BEAD_GREEN};
+        }
+        PS.Oops(fn + "RGB parameter not a number is is a " + (typeof rgb) + " with a value of " + String(rgb));
         return PS.ERROR;
     }
     rgb = Math.floor(rgb);
@@ -261,9 +297,9 @@ PS.UnmakeRGB = function ( rgb )
     red = Math.floor(red);
     rval = red * PS.REDSHIFT;
 
-    green = (rgb - rval) / 256;
+    green = (rgb - rval) / PS.GREENSHIFT;
     green = Math.floor(green);
-    gval = green * 256;
+    gval = green * PS.GREENSHIFT;
 
     blue = rgb - rval - gval;
 
@@ -278,6 +314,16 @@ PS.Dissolve = function ( c1, c2, x )
     "use strict";
     var delta;
 
+    if ( (x <= 0) || (c1 === c2) )
+    {
+        return c1;
+    }
+
+    if ( x >= 100 )
+    {
+        return c2;
+    }
+
     if ( c1 > c2 )
     {
         delta = c1 - c2;
@@ -285,13 +331,11 @@ PS.Dissolve = function ( c1, c2, x )
         delta = Math.floor(delta);
         return ( c1 - delta );
     }
-    else
-    {
-        delta = c2 - c1;
-        delta = ( x * delta ) / 100;
-        delta = Math.floor(delta);
-        return ( c1 + delta );
-    }
+
+    delta = c2 - c1;
+    delta = ( x * delta ) / 100;
+    delta = Math.floor(delta);
+    return ( c1 + delta );
 };
 
 // Bead constuctor
@@ -310,11 +354,8 @@ PS.InitBead = function (xpos, ypos, size, bgcolor)
 
     bead.size = size;
 
-    bead.visible = true;			// bead visible?
-
-    // target color
-
-    bead.dirty = false;				// bead color touched?
+    bead.visible = true;	// bead visible?
+    bead.empty = true;		// bead color unassigned?
 
     // base colors
 
@@ -385,24 +426,39 @@ PS.InitBead = function (xpos, ypos, size, bgcolor)
     return bead;
 };
 
-// Draws bead [bead] in (optional) context [ctx]
+// Fast r/g/b bead draw
+// Assumes all params verified, default alpha, no flashing
+// Does NOT return rgb value!
+// Use only when game is fully debugged!
 
-PS.DrawBead = function (bead, ctx)
+PS.BeadColorFast = function ( x, y, r, g, b )
 {
     "use strict";
-    var offctx, left, top, size, width;
+    var i, bead;
 
-    // get destination context if not provided
+    i = x + (y * PS.Grid.x); // get index of bead
+    bead = PS.Grid.beads[i];
 
-    if ( ctx === undefined )
-    {
-        ctx = PS.Context();
-    }
+    bead.empty = false; // mark this bead as assigned
+    bead.alpha = PS.DEFAULT_ALPHA; // set to default alpha
+    bead.alphaRed = bead.red = r;
+    bead.alphaGreen = bead.green = g;
+    bead.alphaBlue = bead.blue = b;
+    bead.colorNow = bead.color = PS.RGBString( r, g, b );
+    PS.DrawBead(bead);
+};
 
+// Draws [bead]
+
+PS.DrawBead = function (bead)
+{
+    "use strict";
+    var ctx, offctx, left, top, size, width;
+
+    ctx = PS.Grid.context;
     left = 0;
     top = 0;
     size = bead.size;
-
     offctx = bead.offContext; // the offscreen canvas context
 
     // draw border if needed
@@ -420,18 +476,18 @@ PS.DrawBead = function (bead, ctx)
         size -= (width + width);
     }
 
-    // draw bead body if dirty (has had color explicitly set)
+    // use background color if bead is empty
 
-    if ( bead.dirty )
+    if ( bead.empty )
     {
-        offctx.fillStyle = bead.colorNow;
+        offctx.fillStyle = PS.Grid.bgColor;
     }
 
-    // otherwise fill with background color
+    // otherwise fill with assigned color
 
     else
     {
-        offctx.fillStyle = PS.Grid.bgColor;
+        offctx.fillStyle = bead.colorNow;
     }
 
     offctx.fillRect(left, top, size, size);
@@ -447,20 +503,14 @@ PS.DrawBead = function (bead, ctx)
     ctx.drawImage(bead.off, bead.left, bead.top);
 };
 
-// Erase bead [bead] in (optional) context [ctx]
+// Erase [bead]
 
-PS.EraseBead = function (bead, ctx)
+PS.EraseBead = function (bead)
 {
     "use strict";
-    var size, left, top, width;
+    var ctx, size, left, top, width;
 
-    // get destination context if not provided
-
-    if ( ctx === undefined )
-    {
-        ctx = PS.Context();
-    }
-
+    ctx = PS.Grid.context;
     left = bead.left;
     top = bead.top;
     size = bead.size;
@@ -494,6 +544,12 @@ PS.InitGrid = function (x, y)
     var grid, i, j, size, xpos, ypos;
 
     grid = {};
+
+    grid.context = PS.Context(); // init grid canvas context
+    if ( !grid.context )
+    {
+        return null; // exit if failed
+    }
 
     grid.x = x;					// x dimensions of grid
     grid.y = y;					// y dimensions of grid
@@ -531,7 +587,6 @@ PS.InitGrid = function (x, y)
     grid.borderBlue = PS.DEFAULT_BORDER_BLUE;
     grid.borderColor = PS.RGBString (grid.borderRed, grid.borderGreen, grid.borderBlue);
 
-//	grid.borderWidth = PS.DEFAULT_BORDER_WIDTH;
     grid.borderMax = PS.BORDER_WIDTH_MAX; // for now; should be calculated
 
     grid.pointing = -1;			// bead cursor is pointing at (-1 if none)
@@ -563,9 +618,8 @@ PS.InitGrid = function (x, y)
 PS.DrawGrid = function ()
 {
     "use strict";
-    var ctx, beads, cnt, i, bead;
+    var beads, cnt, i, bead;
 
-    ctx = PS.Context();
     beads = PS.Grid.beads;
     cnt = PS.Grid.count;
 
@@ -574,11 +628,11 @@ PS.DrawGrid = function ()
         bead = beads[i];
         if ( bead.visible )
         {
-            PS.DrawBead(bead, ctx);
+            PS.DrawBead(bead);
         }
         else
         {
-            PS.EraseBead(bead, ctx);
+            PS.EraseBead(bead);
         }
     }
 };
@@ -681,12 +735,12 @@ PS.GridSize = function (w, h)
     }
     else if ( w < 1 )
     {
-        PS.Oops(fn + "width parameter < 1");
+        PS.Oops(fn + "Width parameter < 1");
         w = 1;
     }
     else if ( w > PS.GRID_MAX )
     {
-        PS.Oops(fn + "width parameter > " + PS.GRID_MAX);
+        PS.Oops(fn + "Width parameter > " + PS.GRID_MAX);
         w = PS.GRID_MAX;
     }
 
@@ -697,12 +751,12 @@ PS.GridSize = function (w, h)
     }
     else if ( h < 1 )
     {
-        PS.Oops(fn + "height parameter < 1");
+        PS.Oops(fn + "Height parameter < 1");
         h = 1;
     }
     else if ( h > PS.GRID_MAX )
     {
-        PS.Oops(fn + "height parameter > " + PS.GRID_MAX);
+        PS.Oops(fn + "Height parameter > " + PS.GRID_MAX);
         h = PS.GRID_MAX;
     }
 
@@ -726,6 +780,11 @@ PS.GridSize = function (w, h)
     }
 
     PS.Grid = PS.InitGrid(w, h);
+    if ( !PS.Grid )
+    {
+        PS.Oops(fn + "Grid initialization failed");
+        return;
+    }
 
     // Reset mouse coordinates
 
@@ -951,7 +1010,7 @@ PS.BeadShow = function (x, y, flag)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            flag = PS.ERROR;
         }
         else
         {
@@ -961,6 +1020,7 @@ PS.BeadShow = function (x, y, flag)
             }
         }
     }
+
     else if ( y === PS.ALL )
     {
         if ( !PS.CheckX( x, fn ) ) // verify x param
@@ -972,9 +1032,10 @@ PS.BeadShow = function (x, y, flag)
             flag = PS.DoBeadShow( x, j, flag );
         }
     }
+
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        flag = PS.ERROR;
     }
     else
     {
@@ -1001,27 +1062,37 @@ PS.DoBeadColor = function ( x, y, rgb, r, g, b )
 
     if ( (rgb === undefined) || (rgb === PS.CURRENT) ) // if no rgb or PS.CURRENT, return current color
     {
+        if ( bead.empty )
+        {
+            return PS.EMPTY;
+        }
         return (bead.red * PS.REDSHIFT) + (bead.green * 256) + bead.blue;
     }
 
-    bead.dirty = true; // mark this bead as explicitly colored
-
-    bead.red = r;
-    bead.green = g;
-    bead.blue = b;
-    if ( bead.alpha < PS.DEFAULT_ALPHA ) // Calc new color based on alpha
+    if ( rgb === PS.EMPTY )
     {
-        bead.alphaRed = PS.Dissolve( PS.Grid.bgRed, r, bead.alpha );
-        bead.alphaGreen = PS.Dissolve( PS.Grid.bgGreen, g, bead.alpha );
-        bead.alphaBlue = PS.Dissolve( PS.Grid.bgBlue, b, bead.alpha );
-        bead.color = PS.RGBString( bead.alphaRed, bead.alphaGreen, bead.alphaBlue );
+        bead.empty = true;
     }
     else
     {
-        bead.alphaRed = r;
-        bead.alphaGreen = g;
-        bead.alphaBlue = b;
-        bead.color = PS.RGBString( r, g, b );
+        bead.empty = false; // mark this bead as assigned	
+        bead.red = r;
+        bead.green = g;
+        bead.blue = b;
+        if ( bead.alpha < PS.DEFAULT_ALPHA ) // Calc new color based on alpha
+        {
+            bead.alphaRed = PS.Dissolve( PS.Grid.bgRed, r, bead.alpha );
+            bead.alphaGreen = PS.Dissolve( PS.Grid.bgGreen, g, bead.alpha );
+            bead.alphaBlue = PS.Dissolve( PS.Grid.bgBlue, b, bead.alpha );
+            bead.color = PS.RGBString( bead.alphaRed, bead.alphaGreen, bead.alphaBlue );
+        }
+        else
+        {
+            bead.alphaRed = r;
+            bead.alphaGreen = g;
+            bead.alphaBlue = b;
+            bead.color = PS.RGBString( r, g, b );
+        }
     }
 
     if ( bead.visible )
@@ -1049,12 +1120,10 @@ PS.BeadColor = function (x, y, rgb)
 
     // if no rgb specified, just return current color
 
-    if ( rgb === PS.DEFAULT )
+    if ( (rgb === PS.DEFAULT) || (rgb === PS.EMPTY) )
     {
-        rgb = PS.DEFAULT_BEAD_COLOR;
-        r = PS.DEFAULT_BG_RED;
-        g = PS.DEFAULT_BG_GREEN;
-        b = PS.DEFAULT_BG_BLUE;
+        rgb = PS.EMPTY;
+        r = g = b = undefined;
     }
     else if ( (rgb !== undefined) && (rgb !== PS.CURRENT) )
     {
@@ -1063,19 +1132,10 @@ PS.BeadColor = function (x, y, rgb)
         {
             return PS.ERROR;
         }
-        if(rgb.r != undefined)
-        {
-           r = rgb.r;
-           g = rgb.g;
-           b = rgb.b;
-
-        } else
-        {
-            colors = PS.UnmakeRGB( rgb );
-            r = colors.r;
-            g = colors.g;
-            b = colors.b;
-        }
+        colors = PS.UnmakeRGB( rgb );
+        r = colors.r;
+        g = colors.g;
+        b = colors.b;
     }
 
     if ( x === PS.ALL )
@@ -1092,7 +1152,7 @@ PS.BeadColor = function (x, y, rgb)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            rgb = PS.ERROR;
         }
         else
         {
@@ -1115,7 +1175,7 @@ PS.BeadColor = function (x, y, rgb)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        rgb = PS.ERROR;
     }
     else
     {
@@ -1148,7 +1208,6 @@ PS.DoBeadAlpha = function ( x, y, a )
     // Calc new color between background and base
 
     bead.alpha = a;
-    bead.dirty = true;
     if ( bead.alpha < PS.DEFAULT_ALPHA ) // Calc new color based on alpha
     {
         bead.alphaRed = PS.Dissolve( PS.Grid.bgRed, bead.red, a );
@@ -1163,7 +1222,7 @@ PS.DoBeadAlpha = function ( x, y, a )
         bead.alphaBlue = bead.blue;
         bead.color = PS.RGBString( bead.red, bead.green, bead.blue );
     }
-    if ( bead.visible )
+    if ( bead.visible && !bead.empty )
     {
         if ( PS.Grid.flash && bead.flash )
         {
@@ -1228,7 +1287,7 @@ PS.BeadAlpha = function (x, y, a)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            a = PS.ERROR;
         }
         else
         {
@@ -1251,7 +1310,7 @@ PS.BeadAlpha = function (x, y, a)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        a = PS.ERROR;
     }
     else
     {
@@ -1334,7 +1393,7 @@ PS.BeadBorderWidth = function (x, y, width)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            width = PS.ERROR;
         }
         else
         {
@@ -1357,7 +1416,7 @@ PS.BeadBorderWidth = function (x, y, width)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        width = PS.ERROR;
     }
     else
     {
@@ -1447,7 +1506,7 @@ PS.BeadBorderColor = function (x, y, rgb)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            rgb = PS.ERROR;
         }
         else
         {
@@ -1470,7 +1529,7 @@ PS.BeadBorderColor = function (x, y, rgb)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        rgb = PS.ERROR;
     }
     else
     {
@@ -1568,7 +1627,7 @@ PS.BeadBorderAlpha = function (x, y, a)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            a = PS.ERROR;
         }
         else
         {
@@ -1591,7 +1650,7 @@ PS.BeadBorderAlpha = function (x, y, a)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        a = PS.ERROR;
     }
     else
     {
@@ -1696,7 +1755,7 @@ PS.BeadGlyph = function (x, y, g)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            g = PS.ERROR;
         }
         else
         {
@@ -1719,7 +1778,7 @@ PS.BeadGlyph = function (x, y, g)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        g = PS.ERROR;
     }
     else
     {
@@ -1808,7 +1867,7 @@ PS.BeadGlyphColor = function (x, y, rgb)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            rgb = PS.ERROR;
         }
         else
         {
@@ -1831,7 +1890,7 @@ PS.BeadGlyphColor = function (x, y, rgb)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        rgb = PS.ERROR;
     }
     else
     {
@@ -1904,7 +1963,7 @@ PS.BeadFlash = function (x, y, flag)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            flag = PS.ERROR;
         }
         else
         {
@@ -1927,7 +1986,7 @@ PS.BeadFlash = function (x, y, flag)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        flag = PS.ERROR;
     }
     else
     {
@@ -2006,7 +2065,7 @@ PS.BeadFlashColor = function (x, y, rgb)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            rgb = PS.ERROR;
         }
         else
         {
@@ -2029,7 +2088,7 @@ PS.BeadFlashColor = function (x, y, rgb)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        rgb = PS.ERROR;
     }
     else
     {
@@ -2083,7 +2142,7 @@ PS.BeadData = function (x, y, data)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            data = PS.ERROR;
         }
         else
         {
@@ -2106,7 +2165,7 @@ PS.BeadData = function (x, y, data)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        data = PS.ERROR;
     }
     else
     {
@@ -2160,14 +2219,17 @@ PS.BeadAudio = function (x, y, audio, volume)
         {
             audio = null;
         }
-        else if ( typeof audio !== "string" )
+        else
         {
-            PS.Oops(fn + "audio param is not a string");
-            return PS.ERROR;
-        }
-        else if ( audio.length < 1 )
-        {
-            audio = null;
+            if ( typeof audio !== "string" )
+            {
+                PS.Oops(fn + "audio param is not a string");
+                return PS.ERROR;
+            }
+            if ( audio.length < 1 )
+            {
+                audio = null;
+            }
         }
     }
 
@@ -2179,13 +2241,13 @@ PS.BeadAudio = function (x, y, audio, volume)
         {
             volume = PS.DEFAULT_VOLUME;
         }
-        else if ( typeof volume !== "number" )
-        {
-            PS.Oops(fn + "volume param is not a number");
-            return PS.ERROR;
-        }
         else
         {
+            if ( typeof volume !== "number" )
+            {
+                PS.Oops(fn + "volume param is not a number");
+                return PS.ERROR;
+            }
             if ( volume < 0 )
             {
                 volume = 0;
@@ -2211,7 +2273,7 @@ PS.BeadAudio = function (x, y, audio, volume)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            audio = PS.ERROR;
         }
         else
         {
@@ -2234,7 +2296,7 @@ PS.BeadAudio = function (x, y, audio, volume)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        audio = PS.ERROR;
     }
     else
     {
@@ -2301,7 +2363,7 @@ PS.BeadFunction = function (x, y, exec)
         }
         else if ( !PS.CheckY( y, fn ) ) // verify y param
         {
-            return PS.ERROR;
+            exec = PS.ERROR;
         }
         else
         {
@@ -2324,7 +2386,7 @@ PS.BeadFunction = function (x, y, exec)
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
     {
-        return PS.ERROR;
+        exec = PS.ERROR;
     }
     else
     {
@@ -2386,11 +2448,7 @@ PS.BeadTouch = function (x, y)
                 }
             }
         }
-        else if ( !PS.CheckY( y, fn ) ) // verify y param
-        {
-            return;
-        }
-        else
+        else if ( PS.CheckY( y, fn ) ) // verify y param
         {
             for ( i = 0; i < PS.Grid.x; i += 1 ) // do entire row
             {
@@ -2409,11 +2467,7 @@ PS.BeadTouch = function (x, y)
             PS.DoBeadTouch( x, j );
         }
     }
-    else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
-    {
-        return;
-    }
-    else
+    else if ( PS.CheckX( x, fn ) && PS.CheckY( y, fn ) ) // verify both params
     {
         PS.DoBeadTouch( x, y ); // do one bead
     }
@@ -2601,7 +2655,7 @@ PS.DebugClear = function ()
     if ( e )
     {
         e.style.color="#000000"; // change to black
-        e.innerHTML = "Version 2.1.dna";
+        e.innerHTML = "Version 2.0.0";
     }
 
     if ( PS.DebugWindow )
@@ -2689,6 +2743,13 @@ PS.Clock = function ( ticks )
 PS.Timer = function ()
 {
     "use strict";
+
+    window.setTimeout( function() { window.requestAnimationFrame(PS.Timer); PS.DoTimer(); }, PS.DEFAULT_FPS );
+};
+
+PS.DoTimer = function ()
+{
+    "use strict";
     var phase, hue, r, g, b, e;
 
     // Handle bead flashing and status text fading
@@ -2743,7 +2804,7 @@ PS.Timer = function ()
                 catch (err)
                 {
                     PS.Oops("PS.Tick() failed [" + err.message + "]" );
-                    PS.UserClock = 0; // stop the timer
+                    PS.UserClock = 0; // stop the user timer
                 }
             }
         }
@@ -2791,9 +2852,8 @@ PS.FlashStart = function (x, y)
 PS.FlashNext = function ()
 {
     "use strict";
-    var ctx, len, i, which, bead, phase, r, g, b;
+    var len, i, which, bead, phase, r, g, b;
 
-    ctx = PS.Context();
     len = PS.Grid.flashList.length;
     i = 0;
     while ( i < len )
@@ -2820,7 +2880,7 @@ PS.FlashNext = function ()
             bead.colorNow = PS.RGBString(r, g, b);
             i += 1;
         }
-        PS.DrawBead(bead, ctx);
+        PS.DrawBead(bead);
     }
 };
 
@@ -2850,7 +2910,6 @@ PS.MouseXY = function (event)
 
         x -= canvas.offsetLeft;
         y -= canvas.offsetTop;
-        //alert(x + " and " + y);
 
         // Over the grid?
 
@@ -3314,7 +3373,11 @@ PS.Sys = function ()
 
     // Init audio support, preload error sound
 
-    PS.AudioInit();
+    if ( !PS.AudioInit() )
+    {
+        return; // die if audio system failed
+    }
+
     PS.AudioLoad("fx_uhoh");
 
     // Make sure all required game functions exist
@@ -3398,7 +3461,9 @@ PS.Sys = function ()
 
     // Start the timer
 
-    window.setInterval (PS.Timer, PS.DEFAULT_FPS);
+    PS.Timer();
+
+//	window.setInterval (PS.Timer, PS.DEFAULT_FPS);
 
     // Print version number
 
@@ -3563,277 +3628,6 @@ PS.Xylophone = function ( val )
     return str;
 };
 
-// Audio functions
-
-PS.AUDIO_PATH_DEFAULT = "http://users.wpi.edu/~bmoriarty/ps/audio/"; // case sensitive!
-PS.AUDIO_PATH = PS.AUDIO_PATH_DEFAULT;
-PS.AUDIO_MAX_CHANNELS = 32;
-PS.AudioChannels = [];
-
-PS.AudioInit = function ()
-{
-    "use strict";
-    var i;
-
-    for ( i = 0; i < PS.AUDIO_MAX_CHANNELS; i += 1 )
-    {
-        PS.AudioChannels[i] = {};
-        PS.AudioChannels[i].audio = new Audio();
-        PS.AudioChannels[i].done = -1;
-        PS.AudioChannels[i].id = "";
-    }
-};
-
-PS.AudioError = function (obj)
-{
-    "use strict";
-    var c, str;
-
-    c = obj.error.code;
-    switch ( c )
-    {
-        case 1:
-            str = "MEDIA_ERR_ABORTED";
-            break;
-        case 2:
-            str = "MEDIA_ERR_NETWORK";
-            break;
-        case 3:
-            str = "MEDIA_ERR_DECODE";
-            break;
-        case 4:
-            str = "MEDIA_ERR_SRC_NOT_SUPPORTED";
-            break;
-        default:
-            str = "UNKNOWN";
-            break;
-    }
-
-    PS.Oops("[Audio Error: " + str + "]\n");
-};
-
-PS.AudioPath = function (path)
-{
-    "use strict";
-    var fn;
-
-    fn = "[PS.AudioPath] ";
-
-    if ( path === PS.DEFAULT )
-    {
-        PS.AUDIO_PATH = PS.AUDIO_PATH_DEFAULT;
-    }
-    else if ( typeof path !== "string" )
-    {
-        PS.Oops(fn + "path parameter is not a string");
-        return PS.ERROR;
-    }
-    else
-    {
-        PS.AUDIO_PATH = path;
-    }
-
-    return PS.AUDIO_PATH;
-};
-
-PS.AudioLoad = function (id, path)
-{
-    "use strict";
-    var fn, snd;
-
-    fn = "[PS.AudioLoad] ";
-
-    if ( typeof id !== "string" )
-    {
-        PS.Oops(fn + "id parameter is not a string");
-        return PS.ERROR;
-    }
-    if ( id.length < 1 )
-    {
-        PS.Oops(fn + "id parameter is an empty string");
-        return PS.ERROR;
-    }
-
-    if ( path === undefined )
-    {
-        path = PS.AUDIO_PATH;
-    }
-    else if ( path === PS.DEFAULT )
-    {
-        path = PS.AUDIO_PATH_DEFAULT;
-    }
-    else if ( typeof path !== "string" )
-    {
-        PS.Oops(fn + "path parameter is not a string");
-        return PS.ERROR;
-    }
-
-    // Already got this? Clone it
-
-    snd = document.getElementById(id);
-    if ( snd )
-    {
-        return snd;
-    }
-
-    path = path + id + ".wav";
-
-    snd = document.createElement("audio");
-    snd.setAttribute("src", path);
-    snd.setAttribute("id", id);
-    snd.setAttribute("preload", "auto");
-    snd.setAttribute("onerror", "PS.AudioError(this)");
-
-//	src = document.createElement("source");
-//	src.setAttribute("src", path + ".ogg");
-//	src.setAttribute("type", "audio/ogg");
-//	snd.appendChild(src);
-
-//	src = document.createElement("source");
-//	src.setAttribute("src", path + ".mp3");
-//	src.setAttribute("type", "audio/mpeg");
-//	src.setAttribute("onerror", "PS.AudioError()");
-//	snd.appendChild(src);
-
-//	src = document.createElement("source");
-//	src.setAttribute("src", path + ".wav");
-//	src.setAttribute("type", "audio/x-wav");
-//	snd.appendChild(src);
-
-    document.body.appendChild(snd);
-    snd.load();
-
-    return snd;
-};
-
-// Returns a channel number
-
-PS.AudioPlay = function (id, volume, func, path)
-{
-    "use strict";
-    var fn, i, snd, d, t, channel;
-
-    fn = "[PS.AudioPlay] ";
-
-    if ( (volume === undefined) || (volume === PS.DEFAULT) )
-    {
-        volume = PS.DEFAULT_VOLUME;
-    }
-    else if ( typeof volume !== "number" )
-    {
-        PS.Oops(fn + "volume parameter is not a number");
-        return PS.ERROR;
-    }
-    else if ( volume < 0 )
-    {
-        volume = 0;
-    }
-    else if ( volume > PS.DEFAULT_VOLUME )
-    {
-        volume = PS.DEFAULT_VOLUME;
-    }
-
-    if ( (func !== undefined) && (typeof func !== "function") )
-    {
-        PS.Oops(fn + "func parameter is not a function");
-        return PS.ERROR;
-    }
-
-    snd = PS.AudioLoad(id, path);
-    if ( snd !== PS.ERROR )
-    {
-        snd.volume = volume;
-        if ( func !== undefined )
-        {
-            snd.addEventListener("ended", func);
-        }
-        for ( i = 0; i < PS.AUDIO_MAX_CHANNELS; i += 1 )
-        {
-            d = new Date();
-            t = d.getTime();
-            channel = PS.AudioChannels[i];
-            if ( channel.done < t )
-            {
-                channel.done = t + ( snd.duration * 1000 );
-                channel.audio = snd;
-                channel.id = id;
-                snd.load(); // WHY???
-                snd.play();
-                return i + 1; // channel id
-            }
-        }
-    }
-
-    return PS.ERROR; // error
-};
-
-// Stops playback of channel number
-
-PS.AudioStop = function (c)
-{
-    "use strict";
-    var fn, d, t, channel;
-
-    fn = "[PS.AudioStop] ";
-
-    if ( typeof c !== "number" )
-    {
-        PS.Oops(fn + "Parameter is not a number");
-        return PS.ERROR;
-    }
-    c = Math.floor(c);
-    if ( (c < 1) || (c > PS.AUDIO_MAX_CHANNELS) )
-    {
-        PS.Oops(fn + "Invalid channel id");
-        return PS.ERROR;
-    }
-
-    channel = PS.AudioChannels[c - 1];
-    d = new Date();
-    t = d.getTime();
-
-    channel.done = t; // mark as done playing
-    channel.audio.pause();
-    channel.audio.currentTime = 0;
-
-    return c;
-};
-
-// Pauses/unpauses playback of channel number
-
-PS.AudioPause = function (c)
-{
-    "use strict";
-    var fn, channel, audio;
-
-    fn = "[PS.AudioPause] ";
-
-    if ( typeof c !== "number" )
-    {
-        PS.Oops(fn + "Parameter is not a number");
-        return PS.ERROR;
-    }
-    c = Math.floor(c);
-    if ( (c < 1) || (c > PS.AUDIO_MAX_CHANNELS) )
-    {
-        PS.Oops(fn + "Invalid channel id");
-        return PS.ERROR;
-    }
-
-    channel = PS.AudioChannels[c - 1];
-    audio = channel.audio;
-    if ( audio.paused )
-    {
-        audio.play();
-    }
-    else
-    {
-        audio.pause();
-    }
-
-    return c;
-};
-
 // Image functions
 
 PS.ImageLoad = function ( file, func )
@@ -3884,7 +3678,7 @@ PS.ImageData = function ( img, alpha )
     var fn, w, h, ctx, imgData, imgData2, i, j, len, d1, d2;
 
     fn = "[PS.ImageMap] ";
-    if ( (alpha === undefined) || !alpha )
+    if ( (alpha === undefined) || (alpha === PS.DEFAULT) || !alpha )
     {
         alpha = false;
     }
@@ -3999,10 +3793,13 @@ PS.ImageData = function ( img, alpha )
     return imgData2;
 };
 
+// Blits an imageData structure to the grid
+// imgdata.size can be 1 (multiplexed RGB), 3 or 4 values per pixel
+
 PS.ImageBlit = function ( imgdata, xpos, ypos )
 {
     "use strict";
-    var fn, size, bytes, w, h, pixsize, ptr, drawx, drawy, i, j, r, g, b, a, k, bead;
+    var fn, size, bytes, w, h, pixsize, ptr, drawx, drawy, i, j, r, g, b, a, rgb, rval, gval, k, bead;
 
     fn = "[PS.ImageBlit] ";
 
@@ -4043,7 +3840,17 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
     }
 
     pixsize = imgdata.pixelSize;
-    if ( (pixsize !== 3) && (pixsize !== 4) )
+    if ( typeof pixsize !== "number" )
+    {
+        PS.Oops(fn + "imgdata.pixelSize is not a number");
+        return PS.ERROR;
+    }
+    pixsize = Math.floor(pixsize);
+    if ( pixsize === 1 )
+    {
+        a = PS.DEFAULT_ALPHA; // always use default alpha if multiplexed rgb
+    }
+    else if ( (pixsize !== 3) && (pixsize !== 4) )
     {
         PS.Oops(fn + "invalid pixelSize");
         return PS.ERROR;
@@ -4060,18 +3867,18 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
     {
         xpos = 0;
     }
-    else if ( typeof xpos !== "number" )
-    {
-        PS.Oops(fn + "parameter 2 is not a number");
-        return PS.ERROR;
-    }
     else
     {
+        if ( typeof xpos !== "number" )
+        {
+            PS.Oops(fn + "parameter 2 is not a number");
+            return PS.ERROR;
+        }
         xpos = Math.floor(xpos);
 
         // exit if drawing off grid
 
-        if ( (xpos >= PS.Grid.x) || ((xpos + w) < 1) )
+        if ( ( xpos >= PS.Grid.x ) || ( (xpos + w) < 1 ) )
         {
             return true;
         }
@@ -4081,18 +3888,18 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
     {
         ypos = 0;
     }
-    else if ( typeof ypos !== "number" )
-    {
-        PS.Oops(fn + "parameter 3 is not a number");
-        return PS.ERROR;
-    }
     else
     {
+        if ( typeof ypos !== "number" )
+        {
+            PS.Oops(fn + "parameter 3 is not a number");
+            return PS.ERROR;
+        }
         ypos = Math.floor(ypos);
 
         // exit if drawing off grid
 
-        if ( (ypos >= PS.Grid.y) || ((ypos + h) < 1) )
+        if ( ( ypos >= PS.Grid.y ) || ( (ypos + h) < 1 ) )
         {
             return true;
         }
@@ -4113,81 +3920,118 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
             {
                 if ( (drawx >= 0) && (drawx < PS.Grid.x) )
                 {
-                    r = bytes[ptr];
-                    if ( typeof r !== "number" )
-                    {
-                        PS.Oops(fn + "non-numeric red at position " + ptr);
-                        return PS.ERROR;
-                    }
-                    r = Math.floor(r);
-                    if ( r < 1 )
-                    {
-                        r = 0;
-                    }
-                    else if ( r > 255 )
-                    {
-                        r = 255;
-                    }
+                    // handle multiplexed rgb
 
-                    g = bytes[ptr + 1];
-                    if ( typeof g !== "number" )
+                    if ( pixsize === 1 )
                     {
-                        PS.Oops(fn + "non-numeric green at position " + ptr);
-                        return PS.ERROR;
-                    }
-                    g = Math.floor(g);
-                    if ( g < 1 )
-                    {
-                        g = 0;
-                    }
-                    else if ( g > 255 )
-                    {
-                        g = 255;
-                    }
-
-                    b = bytes[ptr + 2];
-                    if ( typeof b !== "number" )
-                    {
-                        PS.Oops(fn + "non-numeric blue at position " + ptr);
-                        return PS.ERROR;
-                    }
-                    b = Math.floor(b);
-                    if ( b < 1 )
-                    {
-                        b = 0;
-                    }
-                    else if ( b > 255 )
-                    {
-                        b = 255;
-                    }
-
-                    if ( pixsize === 4 )
-                    {
-                        a = bytes[ptr + 3];
-                        if ( typeof a !== "number" )
+                        rgb = bytes[ptr];
+                        if ( typeof rgb !== "number" )
                         {
-                            PS.Oops(fn + "non-numeric alpha at position " + ptr);
+                            PS.Oops(fn + "non-numeric rgb at position " + ptr);
                             return PS.ERROR;
                         }
-                        a = Math.floor(a / 2.55); // convert 0-255 range to 0-100
-                        if ( a < 1 )
+                        rgb = Math.floor(rgb);
+                        if ( rgb < 1 )
                         {
-                            a = 0;
+                            rgb = 0;
                         }
-                        else if ( a > PS.DEFAULT_ALPHA )
+                        else if ( rgb > 0xFFFFFF )
+                        {
+                            rgb = 0xFFFFFF;
+                        }
+                        r = rgb / PS.REDSHIFT;
+                        r = Math.floor(r);
+                        rval = r * PS.REDSHIFT;
+
+                        g = (rgb - rval) / PS.GREENSHIFT;
+                        g = Math.floor(g);
+                        gval = g * PS.GREENSHIFT;
+
+                        b = rgb - rval - gval;
+                    }
+
+                    // handle r g b (a)
+
+                    else
+                    {
+                        r = bytes[ptr];
+                        if ( typeof r !== "number" )
+                        {
+                            PS.Oops(fn + "non-numeric red at position " + ptr);
+                            return PS.ERROR;
+                        }
+                        r = Math.floor(r);
+                        if ( r < 1 )
+                        {
+                            r = 0;
+                        }
+                        else if ( r > 255 )
+                        {
+                            r = 255;
+                        }
+
+                        g = bytes[ptr + 1];
+                        if ( typeof g !== "number" )
+                        {
+                            PS.Oops(fn + "non-numeric green at position " + ptr);
+                            return PS.ERROR;
+                        }
+                        g = Math.floor(g);
+                        if ( g < 1 )
+                        {
+                            g = 0;
+                        }
+                        else if ( g > 255 )
+                        {
+                            g = 255;
+                        }
+
+                        b = bytes[ptr + 2];
+                        if ( typeof b !== "number" )
+                        {
+                            PS.Oops(fn + "non-numeric blue at position " + ptr);
+                            return PS.ERROR;
+                        }
+                        b = Math.floor(b);
+                        if ( b < 1 )
+                        {
+                            b = 0;
+                        }
+                        else if ( b > 255 )
+                        {
+                            b = 255;
+                        }
+
+                        if ( pixsize === 4 )
+                        {
+                            a = bytes[ptr + 3];
+                            if ( typeof a !== "number" )
+                            {
+                                PS.Oops(fn + "non-numeric alpha at position " + ptr);
+                                return PS.ERROR;
+                            }
+                            a = Math.floor(a / 2.55); // convert 0-255 range to 0-100
+                            if ( a < 1 )
+                            {
+                                a = 0;
+                            }
+                            else if ( a > PS.DEFAULT_ALPHA )
+                            {
+                                a = PS.DEFAULT_ALPHA;
+                            }
+                        }
+                        else
                         {
                             a = PS.DEFAULT_ALPHA;
                         }
                     }
-                    else
-                    {
-                        a = PS.DEFAULT_ALPHA;
-                    }
+
+                    // r, g, b and a are now determined
 
                     k = drawx + (drawy * PS.Grid.x); // get index of bead
                     bead = PS.Grid.beads[k];
 
-                    bead.dirty = true; // mark this bead as explicitly colored
+                    bead.empty = false; // mark this bead as assigned
                     if ( a < PS.DEFAULT_ALPHA ) // Calc new color based on alpha-adjusted color of existing bead
                     {
                         bead.alphaRed = PS.Dissolve( PS.Grid.bgRed, bead.alphaRed, a );
@@ -4229,3 +4073,805 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
 
     return true;
 };
+
+// Audio functions
+
+// Returns true if succeeded, else false
+
+PS.AudioInit = function ()
+{
+    "use strict";
+
+    return Sound.Init();
+};
+
+// Sets/returns current audio path, PS.ERROR on error
+
+PS.AudioPath = function (p)
+{
+    "use strict";
+
+    return Sound.SetPath(p);
+};
+
+// Load sound [id] with optional path [p]
+// Returns 1-based channel number
+
+PS.AudioLoad = function (id, p)
+{
+    "use strict";
+    var options;
+
+    if ( p !== undefined )
+    {
+        options = { path: p };
+    }
+    else
+    {
+        options = undefined;
+    }
+
+    return Sound.Load ( id, options );
+};
+
+// Play sound [id] with optional volume [vol], onstop function [func], path [p]
+// Returns 1-based channel number, PS.ERROR on error
+
+PS.AudioPlay = function (id, vol, func, p)
+{
+    "use strict";
+    var options;
+
+    if ( vol !== undefined )
+    {
+        options = { volume: vol };
+        if ( func !== undefined )
+        {
+            options.onstop = func;
+        }
+        if ( p !== undefined )
+        {
+            options.path = p;
+        }
+    }
+    else
+    {
+        options = undefined;
+    }
+
+    return Sound.Play( id, options );
+};
+
+// Stops playback of 1-based channel number [c]
+// Returns channel number, PS.ERROR on error
+
+PS.AudioStop = function (c)
+{
+    "use strict";
+
+    return Sound.Stop( c );
+};
+
+// Pauses/unpauses playback of 1-based channel number [c]
+// Returns channel number, PS.ERROR on error
+
+PS.AudioPause = function (c)
+{
+    "use strict";
+
+    return Sound.Pause( c );
+};
+
+// Sound system 2.0
+
+// Option parameters
+// path: string (path specifier; default = Sound.Path)
+// now: boolean (play immediately; default = false)
+// loop: boolean (loop on playback; default = false)
+// keep: boolean (do not unload; default = false)
+// volume: float (initial volume; default = Sound.DEFAULT_VOLUME)
+// start: int (where to start playback; default = 0)
+// until: int (where to end playback; default = end)
+// track: string (track assignment for queueing; default = Sound.DEFAULT)
+// onstart: string (name of a function in G namespace to run when sound starts)
+// onstop: string (name of a function in G namespace to run when sound stops)
+
+// Modify this function to invoke host application's error string handler
+
+Sound.Error = function (str)
+{
+    "use strict";
+
+    PS.Oops(str);
+    return Sound.ERROR;
+};
+
+// Returns true if init was successful, else false
+
+Sound.Init = function ()
+{
+    "use strict";
+    var i;
+
+    if ( !document.createElement("audio").canPlayType )
+    {
+        Sound.Mode = Sound.MODE_OFF;
+        document.alert("HTML5 audio not supported by this browser");
+        return false;
+    }
+
+    Sound.Mode = Sound.MODE_ON;
+
+    // set up empty channels
+
+    for ( i = 0; i < Sound.MAX_CHANNELS; i += 1 )
+    {
+        Sound.Channels[i] = {
+            name: "",
+            track: "",
+            now: false,
+            keep: false,
+            status: Sound.EMPTY,
+            duration: 0,
+            onstart: null,
+            onstop: null,
+            snd: new Audio()
+        };
+    }
+
+    // set up default track
+
+    Sound.Tracks.push( { name: Sound.DEFAULT, queue: [] } );
+
+    return true;
+};
+
+// Sets/returns new default path, else ERROR
+
+Sound.SetPath = function (path)
+{
+    "use strict";
+    var fn;
+
+    fn = "[Sound.SetPath] ";
+
+    if ( path === Sound.DEFAULT )
+    {
+        path = Sound.Path = Sound.DEFAULT_PATH;
+    }
+    else if ( (typeof path !== "string") || (path.length < 1) )
+    {
+        path = Sound.Error (fn + "path parameter not a valid string");
+    }
+    else
+    {
+        Sound.Path = path;
+    }
+
+    return path;
+};
+
+// Returns complete path of a sound file
+// Also verifies option parameters
+
+Sound.GetPath = function (id, options)
+{
+    "use strict";
+    var fn, path, param, len, i, found;
+
+    fn = "[Sound.GetPath] ";
+
+    if ( (typeof id !== "string") || (id.length < 1) )
+    {
+        return Sound.Error(fn + "Invalid id");
+    }
+
+    path = Sound.Path; // default to current path
+
+    if ( options )
+    {
+        if ( options.path ) // if path is specified
+        {
+            path = Sound.SetPath(options.path);
+            if ( path === Sound.ERROR )
+            {
+                return path;
+            }
+        }
+
+        if ( options.volume )
+        {
+            param = options.volume;
+            if ( typeof param !== "number" )
+            {
+                return Sound.Error(fn + "Invalid volume param");
+            }
+
+            if ( param > 1.0 ) // clamp
+            {
+                options.volume = 1.0;
+            }
+            else if ( param < 0 ) // clamp
+            {
+                options.volume = 0;
+            }
+        }
+
+        if ( options.track )
+        {
+            param = options.track;
+            if ( (typeof param !== "string") || (param.length < 1) )
+            {
+                return Sound.Error(fn + "Invalid track param");
+            }
+
+            // make sure track exists
+
+            found = false;
+            len = Sound.Tracks.length;
+            for ( i = 0; i < len; i += 1 )
+            {
+                if ( Sound.Tracks[i].name === param )
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if ( !found )
+            {
+                return Sound.Error(fn + "Missing track");
+            }
+        }
+
+        if ( options.onstart && (typeof options.onstart !== "function") )
+        {
+            return Sound.Error(fn + "Invalid onstart function");
+        }
+
+        if ( options.onstop && (typeof options.onstop !== "function") )
+        {
+            return Sound.Error(fn + "Invalid onstop function");
+        }
+    }
+
+    return path + id;
+};
+
+Sound.LoadPath = function (path, options)
+{
+    "use strict";
+    var fn, e, s, i, c, channel, func;
+
+    fn = "[Sound.LoadPath] ";
+
+//	PS.Debug("Create " + path + " element\n");
+
+    e = document.createElement("audio");
+    if ( !e )
+    {
+        return Sound.Error(fn + "Invalid <audio> element");
+    }
+    e.id = "snd" + Sound.Count;
+    Sound.Count += 1;
+
+    e.preload = "auto";
+
+    // add error handler
+
+    e.addEventListener("error", function (evt)
+    {
+        var str;
+
+        switch ( evt.error.code )
+        {
+            case 1:
+                str = "MEDIA_ERR_ABORTED";
+                break;
+            case 2:
+                str = "MEDIA_ERR_NETWORK";
+                break;
+            case 3:
+                str = "MEDIA_ERR_DECODE";
+                break;
+            case 4:
+                str = "MEDIA_ERR_SRC_NOT_SUPPORTED";
+                break;
+            default:
+                str = "UNKNOWN";
+                break;
+        }
+        return Sound.Error(fn + path + " [" + str + "]");
+    });
+
+    // assign a channel
+
+    channel = 0;
+    for ( i = 0; i < Sound.MAX_CHANNELS; i += 1 )
+    {
+        c = Sound.Channels[i];
+        if ( c.name.length < 1 ) // unassigned?
+        {
+            channel = i + 1;
+            c.name = path;
+            c.status = Sound.LOADING;
+            c.snd = e;
+            c.snd.volume = Sound.DEFAULT_VOLUME; // default			
+            c.keep = false; // default	
+            c.now = false; // default	
+            c.track = ""; // default;
+            c.duration = 0;
+            c.onstart = null;
+            c.onstop = null;
+            if ( options )
+            {
+                if ( options.keep )
+                {
+                    c.keep = true;
+                }
+                if ( options.loop )
+                {
+                    c.snd.loop = true;
+                }
+                if ( options.volume )
+                {
+                    c.snd.volume = options.volume;
+                }
+                if ( options.track ) // if track specified, add sound to queue
+                {
+                    c.track = options.track;
+                    Sound.AddQueue(options.track, i);
+                }
+                if ( options.now )
+                {
+                    c.now = true;
+                }
+                if ( options.onstart )
+                {
+                    c.onstart = options.onstart;
+                }
+                if ( options.onstop )
+                {
+                    c.onstop = options.onstop;
+                }
+            }
+
+//			L.Debug("Assigned " + path + " ch " + i + "\n");
+            break;
+        }
+    }
+
+    if ( !channel )
+    {
+        return Sound.Error(fn + "No channel available for " + path);
+    }
+
+    e.setAttribute("data-channel", channel); // remember the channel
+
+    // add load and ended handlers
+
+    e.addEventListener("loadeddata", function (evt)
+    {
+        var j, ch, d, ff, step;
+
+        j = parseInt(this.getAttribute("data-channel"), 10) - 1; // get the actual channel index
+        ch = Sound.Channels[j];
+
+//		L.Debug("Loaded " + ch.name + " ch " + i + "\n");
+
+        if ( ch.now ) // play immediately if specified
+        {
+            Sound.StartChannel(j);
+        }
+        else // or indicate on-standby
+        {
+            ch.status = Sound.READY;
+        }
+    });
+
+    e.addEventListener("ended", function (evt)
+    {
+        var j, ch;
+
+        j = parseInt(this.getAttribute("data-channel"), 10) - 1; // get the actual channel index
+        ch = Sound.Channels[j];
+
+        // if channel has an onstop function, call it
+
+        if ( ch.onstop )
+        {
+            try
+            {
+                ch.onstop(j + 1); // call with 1-based channel number
+            }
+            catch (err)
+            {
+                Sound.Error(".onstop function failed [" + err.message + "]" );
+            }
+        }
+
+        if ( !this.loop ) // only change non-looping channels
+        {
+            if ( !ch.keep ) // discard channel if transient
+            {
+//				PS.Debug("Discard " + ch.name + " ch " + j + "\n");
+                this.parentNode.removeChild(this);
+                ch.keep = false;
+                ch.now = false;
+                ch.status = Sound.EMPTY;
+                ch.duration = 0;
+                ch.name = ""; // mark channel as available
+                ch.onstart = null;
+                ch.onstop = null;
+            }
+            else // mark channel as ended
+            {
+//				PS.Debug("End " + ch.name + " ch " + j + "\n");
+                ch.status = Sound.READY;
+            }
+            if ( ch.track ) // start next sound in queue
+            {
+                Sound.NextQueue(ch.track, j);
+                ch.track = "";
+            }
+        }
+    });
+
+    s = document.createElement("source");
+    s.src = path + ".wav";
+    s.type = "audio/x-wav";
+    e.appendChild(s);
+
+//	s = document.createElement("source");
+//	s.src = path + ".opus";
+//	s.type = "audio/opus";
+//	e.appendChild(s);
+
+    s = document.createElement("source");
+    s.src = path + ".ogg";
+    s.type = "audio/ogg";
+    e.appendChild(s);
+
+    s = document.createElement("source");
+    s.src = path + ".mp3";
+    s.type = "audio/mpeg";
+    e.appendChild(s);
+
+    document.body.appendChild(e); // must be done to insure 'ended' is called
+
+    return channel;
+};
+
+// Load from a simple id & options
+
+Sound.Load = function (id, options)
+{
+    "use strict";
+    var path;
+
+    path = Sound.GetPath(id, options);
+    if ( path === Sound.ERROR )
+    {
+        return Sound.ERROR;
+    }
+    return Sound.LoadPath(path, options);
+};
+
+Sound.Play = function (id, options)
+{
+    "use strict";
+    var fn, path, i, c, func;
+
+    fn = "[Sound.Play] ";
+
+    path = Sound.GetPath(id, options);
+    if ( path === Sound.ERROR )
+    {
+        return path;
+    }
+
+    // play sound if already available and not playing
+
+    for ( i = 0; i < Sound.MAX_CHANNELS; i += 1 )
+    {
+        c = Sound.Channels[i];
+        if ( c.name === path )
+        {
+            if ( c.status === Sound.READY )
+            {
+//				PS.Debug("Replay " + id + " channel " + i + "\n");
+                if ( options )
+                {
+                    if ( options.volume )
+                    {
+                        c.snd.volume = options.volume;
+                    }
+                }
+                Sound.StartChannel(i);
+                return i + 1; // channel id
+            }
+        }
+    }
+
+//	PS.Debug("Load/play " + id + "\n");
+
+    if ( !options )
+    {
+        options = {};
+    }
+    options.now = true;
+    return Sound.LoadPath(path, options); // load with immediate playback
+};
+
+// Stop a channel
+// Assumes a 1-based channel id
+
+Sound.Stop = function (channel)
+{
+    "use strict";
+    var fn, ch;
+
+    fn = "[Sound.Stop] ";
+
+    if ( typeof channel !== "number" )
+    {
+        return Sound.Error(fn + "Invalid channel id" );
+    }
+
+    channel = Math.floor(channel);
+    if ( (channel < 1) || (channel > Sound.MAX_CHANNELS) )
+    {
+        return Sound.Error(fn + "Channel id out of range" );
+    }
+
+    ch = Sound.Channels[channel - 1];
+    ch.status = Sound.READY;
+    ch.snd.pause();
+
+    return channel;
+};
+
+// Pause/Unpause a channel
+// Assumes a 1-based channel id
+
+Sound.Pause = function (channel)
+{
+    "use strict";
+    var fn, ch;
+
+    fn = "[Sound.Pause] ";
+
+    if ( typeof channel !== "number" )
+    {
+        return Sound.Error(fn + "Invalid channel id" );
+    }
+
+    channel = Math.floor(channel);
+    if ( (channel < 1) || (channel > Sound.MAX_CHANNELS) )
+    {
+        return Sound.Error(fn + "Channel id out of range" );
+    }
+
+    ch = Sound.Channels[channel - 1];
+
+    if ( ch.snd.paused )
+    {
+        ch.status = Sound.ACTIVE;
+        ch.snd.play();
+    }
+    else
+    {
+        ch.status = Sound.READY;
+        ch.snd.pause();
+    }
+
+    return channel;
+};
+
+// Start a loaded sound channel
+// Assumes a verified zero-based channel index!
+
+Sound.StartChannel = function (channel)
+{
+    "use strict";
+    var ch, func;
+
+    ch = Sound.Channels[channel];
+
+    // if channel has onstart function, call it
+
+    if ( ch.onstart )
+    {
+        try
+        {
+            ch.onstart(channel + 1); // call with channel number
+        }
+        catch (err)
+        {
+            Sound.Error(".onstart function failed [" + err.message + "]" );
+        }
+    }
+
+    ch.now = false; // needed?	
+    ch.status = Sound.ACTIVE;
+    ch.snd.play();
+};
+
+
+// Create a new track
+
+Sound.AddTrack = function (track)
+{
+    "use strict";
+    var fn, len, i, t;
+
+    fn = "[Sound.AddTrack] ";
+
+    if ( (typeof track !== "string") || (track.length < 1) )
+    {
+        return Sound.Error(fn + "Invalid track param");
+    }
+
+    // make sure track isn't already defined
+
+    len = Sound.Tracks.length;
+    for ( i = 0; i < len; i += 1 )
+    {
+        t = Sound.Tracks[i];
+        if ( t.name === track )
+        {
+            return Sound.Error(fn + "Track '" + track + "' already defined");
+        }
+    }
+
+    // create the track
+
+    Sound.Tracks.push( { name: track, queue: [] } );
+    return true;
+};
+
+// Add a channel to a track queue
+
+Sound.AddQueue = function (track, channel)
+{
+    "use strict";
+    var fn, len, i, t, q;
+
+    fn = "[Sound.AddQueue] ";
+
+    len = Sound.Tracks.length;
+    for ( i = 0; i < len; i += 1 )
+    {
+        t = Sound.Tracks[i];
+        if ( t.name === track )
+        {
+//			PS.Debug("Adding ch " + channel + " to track " + track + "\n");
+            q = t.queue;
+            q.push(channel);
+            if ( q.length === 1 ) // if first in queue, play immediately
+            {
+                Sound.Channels[channel].now = true;
+            }
+        }
+    }
+};
+
+// Play next sound in track after [channel]
+
+Sound.NextQueue = function (track, channel)
+{
+    "use strict";
+    var fn, len, i, t, q, qlen, j, xch, nxt, c;
+
+    fn = "[Sound.NextQueue] ";
+
+//	PS.Debug(fn + "track " + track + " ch " + channel + "\n");
+
+    len = Sound.Tracks.length;
+    for ( i = 0; i < len; i += 1 )
+    {
+        t = Sound.Tracks[i];
+        if ( t.name === track )
+        {
+            // find this channel in queue
+
+            q = t.queue;
+            qlen = q.length;
+            j = 0;
+            while ( j < qlen )
+            {
+                xch = q[j];
+                if ( xch === channel ) // found it!
+                {
+                    q.splice(j, 1); // remove sound from queue					
+                    if ( qlen > 1 ) // was this the last sound in queue?
+                    {
+                        nxt = q[j]; // get next sound in queue
+                        c = Sound.Channels[nxt];
+//						PS.Debug("Starting " + c.name + " ch " + nxt + "\n");
+                        if ( c.status === Sound.READY )
+                        {
+                            Sound.StartChannel(nxt);
+                        }
+                        else
+                        {
+                            c.now = true; // play when loaded
+                        }
+                    }
+                    return true;
+                }
+                j += 1;
+            }
+        }
+    }
+
+    return Sound.Error(fn + "Missing track " + track + " ch " + channel);
+};
+
+// Queue a sound
+
+Sound.Queue = function (id, options)
+{
+    "use strict";
+    var fn, path;
+
+    fn = "[Sound.Queue] ";
+
+//	PS.Debug("Queueing " + id + "\n");	
+
+    path = Sound.GetPath(id, options);
+    if ( path === Sound.ERROR )
+    {
+        return Sound.ERROR;
+    }
+
+    // if track not specified, use default
+
+    if ( !options )
+    {
+        options = { track: Sound.DEFAULT };
+    }
+    else if ( !options.track )
+    {
+        options.track = Sound.DEFAULT;
+    }
+
+    return Sound.LoadPath(path, options);
+};
+
+// requestAnimationFrame polyfill by Erik MÃ¶ller
+// fixes from Paul Irish and Tino Zijdel
+
+( function()
+{
+    "use strict";
+    var lastTime, vendors, i, str;
+
+    lastTime = 0;
+    vendors = ["ms", "moz", "webkit", "o"];
+
+    for ( i = 0; i < vendors.length && !window.requestAnimationFrame; i += 1 )
+    {
+        str = vendors[i];
+        window.requestAnimationFrame = window[str + "RequestAnimationFrame"];
+        window.cancelAnimationFrame = window[str +"CancelAnimationFrame"] || window[str + "CancelRequestAnimationFrame"];
+    }
+
+    if ( !window.requestAnimationFrame )
+    {
+        window.requestAnimationFrame = function (callback, element)
+        {
+            var currTime, timeToCall, id;
+
+            currTime = new Date().getTime();
+            timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            id = window.setTimeout( function () { callback(currTime + timeToCall); }, timeToCall );
+            lastTime = currTime + timeToCall;
+            return id;
+        };
+    }
+
+    if ( !window.cancelAnimationFrame )
+    {
+        window.cancelAnimationFrame = function (id) { window.clearTimeout(id); };
+    }
+} ());
