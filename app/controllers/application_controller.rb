@@ -30,4 +30,8 @@ class ApplicationController < ActionController::Base
   def peterstoy
     render '/Assig3/peterstoy.html.haml'
   end
+
+  def assig4
+    render '/Assig4/puzzle.html.haml'
+  end
 end

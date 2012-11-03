@@ -11,6 +11,7 @@ WebSite::Application.routes.draw do
   match '/LPHS' => 'ldhs#topten'
   match '/fol' => 'application#fol'
   match '/peterstoy' => 'application#peterstoy'
+  match '/assig4' => 'application#assig4'
   # The priority is based upon order of creation:
   # first created -> highest priority.
 
