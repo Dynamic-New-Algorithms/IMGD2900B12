@@ -259,7 +259,7 @@ jQuery ->
     build_walls = () ->
       for x in [G.BOARD.X_min..G.BOARD.X_max]
         for y in [G.BOARD.Y_min..G.BOARD.Y_max]
-          PS.BeadData x,y, (Math.floor(Math.random() * (G.Walls.length ))+1) if Math.random() <= G.DIFICCULTY.Walls
+          PS.BeadData x,y, (Math.floor(Math.random() * (G.DIFICCULTY.Wall_types ))+1) if Math.random() <= G.DIFICCULTY.Walls
     #build a random set of rules
     generate_rules = () ->
       G.Shifts = []
@@ -268,7 +268,9 @@ jQuery ->
         center = Math.floor(Math.random() * G.DIFICCULTY.Wall_types + 1)
         left = [center,0,0,0,0,0,0,0,0]
         right = [0,0,0,0,0,0,0,0,0]
-        while valid == false
+        iii = 0
+        while valid == false  and iii < 20
+          iii = iii + 1
           valid = true
 
           #number of peices
@@ -318,22 +320,27 @@ jQuery ->
       COLORS:
         PLAYER: 0x0000ff
         START: 0xff0000
-        END: 0x00ff00
-        GROUND: 0xffffff
+        END: 0x22aa00
+        GROUND: 0xAB9588
       STATUS:
-        CYCLE: 300
+        CYCLE: 20
         Current: 0
         VALUES: ['The Labyrinth', 'WASD or arrows to move.','Space to pick up or put down walls.']
       DIFICCULTY:
         Rules: 10
-        Walls: 0.60
-        Wall_types: 3
+        Walls: 0.70
+        Wall_types: 1
       Mode: 'play'
       Walls: [new wall('brick',0xA50021,'b',0xf56081), new wall('hedge',0x00a521,'h',0x60f581),new wall('river',0x0021a5,'r',0x6081f5)]
       Player: new player()
       Shifts: []
       Tick: 0 #keeps track of how many tick the game has had
 
+      #Color 1 -- RGB: 210, 194, 153 / HEX: D2C299
+      #Color 2 -- RGB: 171, 149, 136 / HEX: AB9588
+      #Color 3 -- RGB: 156, 117, 82 / HEX: 9C7552
+      #Color 4 -- RGB: 114, 93, 65 / HEX: 725D41
+      #Color 5 -- RGB: 133, 100, 78 / HEX: 85644E
     #------------------------------------------ pre PS.init init --------------------------------------
 
 
@@ -353,7 +360,7 @@ jQuery ->
 
       build_walls()
 
-      PS.Clock(1)
+      PS.Clock(15)
 
     PS.Click = (x, y, data) ->
       "use strict"
@@ -397,10 +404,11 @@ jQuery ->
         PS.StatusText G.STATUS.VALUES[G.STATUS.Current]
         G.STATUS.Current =  (G.STATUS.Current + 1) % G.STATUS.VALUES.length
         G.Tick = 0
-      if G.Player.moved or G.Tick % 15 == 0
+      if G.Player.moved or G.Tick % 2 == 0
         #clear the screen
         PS.BeadColor PS.ALL,PS.ALL, G.COLORS.GROUND
         PS.BeadBorderWidth PS.ALL,PS.ALL,0
+        PS.BeadGlyph PS.ALL,PS.ALL,0
         #draw the end zones
         draw_start_and_end()
         #redraw the walls and shift them
@@ -420,6 +428,9 @@ jQuery ->
         G.Player.moved = true
         if G.Player.x > G.BOARD.X_max
           alert 'Congradulations you won!'
+          G.DIFICCULTY.Wall_types = G.DIFICCULTY.Wall_types + 1
+          G.DIFICCULTY.Wall_types = 1 if G.DIFICCULTY.Wall_types > G.Walls.length
+          G.DIFICCULTY.Rules += 10
           PS.Init()
 
 
