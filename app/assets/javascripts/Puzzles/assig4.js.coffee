@@ -85,6 +85,15 @@ jQuery ->
               nwd = PS.BeadData x-1,y-1
               valid = valid and nwd == @left.north_west
             #end of looking at the left side of the rule now if valid make the changes in bead data
+            #now look to see if we will colid with player
+            valid = valid and G.Player.dose_colide(x,y-1) if can_look_north and @right.north != 0
+            valid = valid and G.Player.dose_colide(x+1,y-1) if can_look_north and can_look_east and @right.north_east != 0
+            valid = valid and G.Player.dose_colide(x+1,y) if can_look_east and @right.east != 0
+            valid = valid and G.Player.dose_colide(x+1,y+1) if can_look_east and can_look_south and @right.south_east != 0
+            valid = valid and G.Player.dose_colide(x,y+1) if can_look_south and @right.south != 0
+            valid = valid and G.Player.dose_colide(x-1,y+1) if can_look_south and can_look_west and @right.south_west != 0
+            valid = valid and G.Player.dose_colide(x-1,y) if can_look_west and @right.west != 0
+            valid = valid and G.Player.dose_colide(x-1,y-1) if can_look_north and can_look_west and @right.north_east != 0
             #alert 'do we match? ' + valid
             if valid
               PS.BeadData x,y,@right.center
@@ -107,6 +116,14 @@ jQuery ->
           y: 0
         @wall = 0
         @moved = true
+
+      dose_colide: (x,y) ->
+        if @x == x and @y == y
+          return false
+        if @wall != 0
+          if @x + @direction.x == x and @y + @direction.y == y
+            return false
+        return true
 
       move: (direction) ->
         @moved = true
@@ -220,21 +237,32 @@ jQuery ->
     #------------------------------------------ Helper Functions ----------------------------------------
     update_board_constraints = () ->
       G.BOARD.X_max = G.GRID.Width - 2
-      G.BOARD.Y_max = G.GRID.Height - 1
+      G.BOARD.Y_max = G.GRID.Height - 2
     draw_start_and_end = () ->
       start_letters = ['S','T','A','R','T',' ']
       end_letters = ['E','N','D',' ']
-      for y in [0..(G.GRID.Height-1)]
+      for y in [G.BOARD.Y_min..G.BOARD.Y_max]
         PS.BeadColor 0,y, G.COLORS.START
         PS.BeadGlyph 0,y, start_letters[y%start_letters.length]
         PS.BeadGlyph G.GRID.Width-1,y, end_letters[y%end_letters.length]
         PS.BeadColor G.GRID.Width-1,y, G.COLORS.END
+
+      draw_controls()
+
+    draw_controls = () ->
+      for x in [0..(G.GRID.Width-1)]
+        PS.BeadColor x, G.GRID.Height-1, 0x00000
+
+      PS.BeadGlyph 0, (G.GRID.Height-1), '⌂'
+      PS.BeadGlyph 1, (G.GRID.Height-1), '↺'
+
     build_walls = () ->
       for x in [G.BOARD.X_min..G.BOARD.X_max]
         for y in [G.BOARD.Y_min..G.BOARD.Y_max]
           PS.BeadData x,y, (Math.floor(Math.random() * (G.Walls.length ))+1) if Math.random() <= G.DIFICCULTY.Walls
     #build a random set of rules
     generate_rules = () ->
+      G.Shifts = []
       for i in [0..G.DIFICCULTY.Rules]
         valid = false
         center = Math.floor(Math.random() * G.DIFICCULTY.Wall_types + 1)
@@ -299,22 +327,25 @@ jQuery ->
       DIFICCULTY:
         Rules: 10
         Walls: 0.60
-        Wall_types: 1
+        Wall_types: 3
       Mode: 'play'
-      Walls: [new wall('brick',0xA50021,'b',0xf56081)]
+      Walls: [new wall('brick',0xA50021,'b',0xf56081), new wall('hedge',0x00a521,'h',0x60f581),new wall('river',0x0021a5,'r',0x6081f5)]
       Player: new player()
       Shifts: []
       Tick: 0 #keeps track of how many tick the game has had
 
     #------------------------------------------ pre PS.init init --------------------------------------
-    update_board_constraints()
-    generate_rules()
+
 
     #------------------------------------------ Events -----------------------------------------
 
     PS.Init = ->
+      G.Player = new player()
+      update_board_constraints()
+      generate_rules()
       # change to the dimensions you want
       PS.GridSize G.GRID.Width, G.GRID.Height
+      PS.StatusFade false
       PS.StatusText G.STATUS.VALUES[G.STATUS.Current]
 
       PS.BeadFlash PS.ALL,PS.ALL,false
@@ -326,6 +357,8 @@ jQuery ->
 
     PS.Click = (x, y, data) ->
       "use strict"
+      if x = 1 and y == G.GRID.Height-1
+        PS.Init()
 
     PS.Release = (x, y, data) ->
       "use strict"
@@ -385,6 +418,9 @@ jQuery ->
         #redraw the player
         G.Player.draw()
         G.Player.moved = true
+        if G.Player.x > G.BOARD.X_max
+          alert 'Congradulations you won!'
+          PS.Init()
 
 
 
