@@ -255,6 +255,7 @@ jQuery ->
 
       PS.BeadGlyph 0, (G.GRID.Height-1), '⌂'
       PS.BeadGlyph 1, (G.GRID.Height-1), '↺'
+      PS.BeadGlyph 2, (G.GRID.Height-1), '☠'
 
     build_walls = () ->
       for x in [G.BOARD.X_min..G.BOARD.X_max]
@@ -266,10 +267,10 @@ jQuery ->
       for i in [0..G.DIFICCULTY.Rules]
         valid = false
         center = Math.floor(Math.random() * G.DIFICCULTY.Wall_types + 1)
-        left = [center,0,0,0,0,0,0,0,0]
+        left = [0,0,0,0,0,0,0,0,0]
         right = [0,0,0,0,0,0,0,0,0]
         iii = 0
-        while valid == false  and iii < 20
+        while valid == false  and iii < 50
           iii = iii + 1
           valid = true
 
@@ -277,18 +278,10 @@ jQuery ->
           n = 1 + Math.floor(Math.random() * 7)
 
           for ni in [1..n]
-            s = Math.floor(Math.random() * 8) + 1
-            while left[s] != 0
-              s = (s+1)
-              s = 1 if s >= left.length
-            left[s] = Math.floor(Math.random() * G.DIFICCULTY.Wall_types + 1)
-          for ni in [0..8]
-            v = left[ni]
-            s = Math.floor(Math.random() * 9)
-            while right[s] != 0
-              s = s + 1
-              s = 0 if s >= right.length
-            right[s] = v
+              left[ni] = Math.floor(Math.random() * G.DIFICCULTY.Wall_types + 1)
+          left = shuffle(left)
+          left[0] = center if left[0] == 0
+          right = shuffle(left)
 
           for i in [0..(G.Shifts.length)]
             if i < G.Shifts.length
@@ -299,7 +292,27 @@ jQuery ->
               if valid == false
                 break
         #now we are valid
-        G.Shifts.push(new shift_rule(left[0],left[1],left[2],left[3],left[4],left[5],left[6],left[7],left[8],right[0],right[1],right[2],right[3],right[4],right[5],right[6],right[7],right[8]))
+        if valid
+          r = 0
+          l = 0
+          for i in [0..8]
+            r += 1 if left[i] != 0
+            l += 1 if right[i] != 0
+          G.Shifts.push(new shift_rule(left[0],left[1],left[2],left[3],left[4],left[5],left[6],left[7],left[8],right[0],right[1],right[2],right[3],right[4],right[5],right[6],right[7],right[8]))
+        else
+          #alert 'cant figure out things'
+      #alert G.Shifts.length
+
+    shuffle = (list) ->
+      new_list = []
+      for i in [0..list.length-1]
+        new_list.push list[i]
+      for i in [0..new_list.length-1]
+        j = Math.floor(Math.random()*new_list.length)
+        temp = new_list[i]
+        new_list[i] = new_list[j]
+        new_list[j] = temp
+      return new_list
 
     debug = (response) ->
       property_names = ""
@@ -360,13 +373,14 @@ jQuery ->
 
       build_walls()
 
-      PS.Clock(15)
+      PS.Clock(5)
 
     PS.Click = (x, y, data) ->
       "use strict"
       if x = 1 and y == G.GRID.Height-1
+        G.Player = new player()
+      if x = 2 and y == G.GRID.Height-1
         PS.Init()
-
     PS.Release = (x, y, data) ->
       "use strict"
 
@@ -404,7 +418,7 @@ jQuery ->
         PS.StatusText G.STATUS.VALUES[G.STATUS.Current]
         G.STATUS.Current =  (G.STATUS.Current + 1) % G.STATUS.VALUES.length
         G.Tick = 0
-      if G.Player.moved or G.Tick % 2 == 0
+      if G.Player.moved
         #clear the screen
         PS.BeadColor PS.ALL,PS.ALL, G.COLORS.GROUND
         PS.BeadBorderWidth PS.ALL,PS.ALL,0
@@ -414,7 +428,7 @@ jQuery ->
         #redraw the walls and shift them
         for x in [G.BOARD.X_min..G.BOARD.X_max]
           for y in [G.BOARD.Y_min..G.BOARD.Y_max]
-            if PS.BeadData( x,y ) > 0
+            if PS.BeadData( x,y ) > 0 and G.Tick % 3 == 0
               for i in [0..(G.Shifts.length)]
                 if i < G.Shifts.length
                   rule = G.Shifts[i]
