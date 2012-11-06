@@ -1,7 +1,8 @@
 WebSite::Application.routes.draw do
 
   root :to => 'application#home'
-  #assig 3
+  match '/psdna' => 'application#psdna'
+  #toys
   match '/rorschach' => 'application#rorschach'
   match '/flowers' => 'application#flowers'
   match '/rubik' => 'application#rubik'
@@ -11,7 +12,8 @@ WebSite::Application.routes.draw do
   match '/LPHS' => 'ldhs#topten'
   match '/fol' => 'application#fol'
   match '/peterstoy' => 'application#peterstoy'
-  match '/assig4' => 'application#assig4'
+  #puzzles
+  match '/labyrinth/:patch' => 'application#labyrinth', :constraints => { :id => /\d*/ }
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

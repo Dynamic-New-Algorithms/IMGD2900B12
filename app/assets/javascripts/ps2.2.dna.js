@@ -1,9 +1,12 @@
-// ps2.2.js for Perlenspiel 2.2
+// ps2.2.dna.js for Perlenspiel 2.2
 
 /*
  Perlenspiel is a scheme by Professor Moriarty (bmoriarty@wpi.edu).
  Perlenspiel is Copyright Â© 2009-12 Worcester Polytechnic Institute.
  This file is part of Perlenspiel.
+
+ This version of Perlenspiel has been modified by William Decker (bill.dynamicnewalgorithms@gmail.com)
+ a change log can be found at http://dynamic-new-algorithms.herokuapp.com/psdna
 
  Perlenspiel is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published

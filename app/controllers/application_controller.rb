@@ -3,35 +3,78 @@ class ApplicationController < ActionController::Base
     render '/home.html.haml'
   end
 
+  def psdna
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/ps2.2.dna.js'
+    else
+      render '/PS_dna_Change_Log.html.haml'
+    end
+  end
+
   def rorschach
-    render '/Assig3/rorscharch.html.haml'
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/Toys/Rorschach.js'
+    else
+      render '/Toys/rorscharch.html.haml'
+    end
   end
 
   def flowers
-    render '/Assig3/flowers.html.haml'
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/Toys/flowers.js'
+    else
+      render '/Toys/flowers.html.haml'
+    end
   end
 
   def rubik
-    render '/Assig3/rubik.html.haml'
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/Toys/ribik.js'
+    else
+      render '/Toys/rubik.html.haml'
+    end
   end
 
   def composer
-    render '/Assig3/composer.html.haml'
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/Toys/composer.js'
+    else
+      render '/Toys/composer.html.haml'
+    end
   end
 
   def letterpop
-    render '/Assig3/letterpop.html.haml'
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/Toys/letterpop.js'
+    else
+      render '/Toys/letterpop.html.haml'
+    end
   end
 
   def fol
-    render '/Assig3/fountainoflife.html.haml'
+
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/Toys/fountainoflife.js'
+    else
+      render '/Toys/fountainoflife.html.haml'
+    end
   end
 
   def peterstoy
-    render '/Assig3/peterstoy.html.haml'
+
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/Toys/peterstoy.js'
+    else
+      render '/Toys/peterstoy.html.haml'
+    end
   end
 
-  def assig4
-    render '/Assig4/puzzle.html.haml'
+  def labyrinth
+
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/Puzzles/TheLabyrinthp' + params[:patch] + '.js'
+    else
+      render '/Puzzles/TheLabyrinthp' + params[:patch] + '.html.haml'
+    end
   end
 end
