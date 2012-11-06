@@ -291,13 +291,9 @@ jQuery ->
         CYCLE: 300
         Current: 0
         Values: ['The Labyrinth','By Dynamic New Algorithms']
-      DIFICCULTY:
-        Rules: 10
-        Walls: 0.70
-        Wall_types: 1
-      Mode: 'play'
       Walls: [new wall('solid',not_movable,0x725D41,0x725D41),
-              new wall('soft',movable, 0x00a521, 0x60f581)
+              new wall('soft',movable, 0x00a521, 0x60f581),
+              new wall('soft',movable, 0x0021a5, 0x6081f5)
             ]
       Player: new player()
       Shifts: []
@@ -310,7 +306,7 @@ jQuery ->
               ([]), #don't play
               ([]), #don't play
               ]
-      Current_Level: 4
+      Current_Level: 0
       Levels: [
               ( #start declartng level one
                 status: ['The Labyrinth: Level one', 'WASD or arrows to move.']
@@ -372,7 +368,57 @@ jQuery ->
                   ([0,0,f,0,0,0,0,0,0,0,0,0]),
                   ([0,0,0,0,0,0,0,0,0,0,0,0])
                 ]
-                )
+              ),
+              ( #start declartng level one
+                status: ['The Labyrinth: Level six']
+                rules: [ ] #these are the rules that will be implemented
+                board: [
+                  ([0,0,0,0,0,0,0,f,0,0,0,0,0,0,f,0]),
+                  ([0,f,f,f,f,f,f,f,0,f,f,f,0,f,f,0]),
+                  ([0,f,0,0,0,f,0,f,0,0,0,f,f,f,0,0]),
+                  ([0,f,0,f,f,f,0,f,f,0,0,f,0,f,0,0]),
+                  ([0,f,0,0,0,0,0,0,f,f,0,f,0,f,0,0]),
+                  ([0,f,f,f,f,f,f,f,0,f,f,f,0,f,f,f]),
+                  ([0,f,0,f,0,0,0,f,0,0,0,0,0,0,0,f]),
+                  ([f,f,0,0,f,0,f,f,f,f,0,f,f,f,f,0]),
+                  ([f,f,f,f,f,0,f,0,0,0,f,f,0,f,0,0]),
+                  ([0,0,0,0,f,0,f,f,0,f,f,0,0,f,0,0]),
+                  ([0,f,f,0,f,0,0,0,0,f,0,0,0,0,0,0]),
+                  ([0,f,0,0,f,0,f,f,f,f,f,f,f,f,f,0]),
+                  ([0,f,f,f,f,0,f,0,0,0,0,0,0,0,f,0]),
+                  ([0,0,f,0,0,0,f,0,f,0,f,f,f,0,f,0]),
+                  ([0,f,f,f,f,f,f,0,f,f,f,0,f,f,f,0]),
+                  ([0,0,0,0,0,0,f,0,0,0,0,0,0,0,0,0])
+                ]
+              ),
+              ( #start declartng level one
+                status: ['The Labyrinth: Level seven','Green dose not like to be in a corner.','The power of H.','Blue falls.']
+                rules: [
+                  new shift_rule(([1,0,0,0,0,0,0,f,0]),([0,0,0,0,0,0,f,f,1]),'fx_silencer'),
+                  new shift_rule(([0,f,f,0,0,0,1,0,f]),([0,f,1,0,0,0,f,0,f]),'fx_silencer'),
+                  new shift_rule(([1,0,0,0,f,f,f,0,0]),([f,0,1,0,f,f,f,0,0]),'fx_silencer'),
+                  new shift_rule(([1,0,0,0,0,0,f,0,0]),([1,f,f,1,1,1,1,1,f]),'fx_silencer'),
+                  new shift_rule(([1,f,1,1,1,f,1,1,1]),([f,f,f,f,2,2,2,f,f]),'fx_bomb2'),
+                  new shift_rule(([2,f,f,2,0,0,0,2,f]),([f,f,f,f,2,2,2,f,f]),'fx_gun'),
+                ] #these are the rules that will be implemented
+                board: [
+                  ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                  ([0,0,0,0,0,0,0,0,0,f,f,1,0,0,0,0]),
+                  ([0,0,0,0,0,0,0,0,0,0,f,0,0,0,0,0]),
+                  ([0,0,0,0,0,0,f,0,0,0,f,f,f,0,0,0]),
+                  ([0,f,f,f,f,f,f,f,0,0,f,f,f,0,0,0]),
+                  ([0,f,0,0,0,0,0,0,0,0,f,f,f,0,0,0]),
+                  ([0,f,0,0,f,0,0,0,0,0,0,0,0,0,0,0]),
+                  ([0,f,f,f,f,0,0,0,0,0,0,0,0,0,0,0]),
+                  ([0,f,0,0,f,0,0,0,0,0,0,0,0,0,0,0]),
+                  ([0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                  ([f,f,f,f,f,f,0,0,0,0,1,1,1,0,f,f]),
+                  ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,f,0]),
+                  ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,f,0]),
+                  ([0,0,0,0,0,0,0,0,0,0,0,0,0,f,f,0]),
+                  ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+                ]
+              )
               ]
 
     #Color 1 -- RGB: 210, 194, 153 / HEX: D2C299
