@@ -217,6 +217,9 @@ jQuery ->
         PS.BeadColor x, G.GRID.Height-1, 0x00000
 
       PS.BeadGlyph 0, (G.GRID.Height-1), '☠'
+      PS.BeadGlyph (G.GRID.Width-1),(G.GRID.Height-1), '♪' if G.Music_Playing
+      PS.BeadGlyph (G.GRID.Width-1),(G.GRID.Height-1), '♫' if G.Music_Playing == false
+
     load_level = () ->
       level = G.Levels[G.Current_Level]
       #change the status
@@ -299,6 +302,14 @@ jQuery ->
       Player: new player()
       Shifts: []
       Tick: 0 #keeps track of how many tick the game has had
+      Music_index: 0
+      Music_Playing: true
+      Music: [
+              (['piano_f2']), #play just this one
+              (['piano_d4','piano_c4']), #play both of these
+              ([]), #don't play
+              ([]), #don't play
+              ]
       Current_Level: 4
       Levels: [
               ( #start declartng level one
@@ -381,10 +392,18 @@ jQuery ->
 
     PS.Click = (x, y, data) ->
       "use strict"
-      if x == 0 and y == G.GRID.Height-1
-        PS.AudioPlay G.AUDIO.RESTART
-        load_level()
-        PS.StatusText G.STATUS.Values[G.STATUS.Current]
+      if y == G.GRID.Height-1
+        if x == 0
+          PS.AudioPlay G.AUDIO.RESTART
+          load_level()
+          PS.StatusText G.STATUS.Values[G.STATUS.Current]
+        else if x == G.GRID.Width-1
+          if G.Music_Playing
+            G.Music_Playing = false
+          else
+            G.Music_Playing = true
+          PS.BeadGlyph (G.GRID.Width-1),(G.GRID.Height-1), '♪' if G.Music_Playing
+          PS.BeadGlyph (G.GRID.Width-1),(G.GRID.Height-1), '♫' if G.Music_Playing == false
 
     PS.Release = (x, y, data) ->
       "use strict"
@@ -418,8 +437,14 @@ jQuery ->
       "use strict"
       #update tick counter
       G.Tick += 1
-      if G.Tick > 3600
+      if G.Tick >= 3600
         G.Tick = 0
+
+      #play music
+      if G.Tick % 15 == 0 and G.Music_Playing
+        for n in G.Music[G.Music_index]
+          PS.AudioPlay n
+        G.Music_index = (G.Music_index+1) % G.Music.length
       #change status
       if G.Tick % G.STATUS.CYCLE == 0
         G.STATUS.Current = (G.STATUS.Current+1) % G.STATUS.Values.length
