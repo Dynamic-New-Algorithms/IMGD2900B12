@@ -301,6 +301,7 @@ jQuery ->
       Music_index: 0
       Music_Playing: true
       Music: [4,0]
+      Music_queue: []
       Current_Level: 0
       Levels: [
               ( #start declartng level one
@@ -363,9 +364,115 @@ jQuery ->
                   ([0,0,f,0,0,0,0,0,0,0,0,0]),
                   ([0,0,0,0,0,0,0,0,0,0,0,0])
                 ]
-              ),
+                ),
+                ( #start declartng level one
+                  status: ['The Labyrinth: Level six']
+                  rules: [ ] #these are the rules that will be implemented
+                  board: [
+                    ([0,0,0,0,0,0,0,f,0,0,0,0,0,0,f,0]),
+                    ([0,f,f,f,f,f,f,f,0,f,f,f,0,f,f,0]),
+                    ([0,f,0,0,0,f,0,f,0,0,0,f,f,f,0,0]),
+                    ([0,f,0,f,f,f,0,f,f,0,0,f,0,f,0,0]),
+                    ([0,f,0,0,0,0,0,0,f,f,0,f,0,f,0,0]),
+                    ([0,f,f,f,f,f,f,f,0,f,f,f,0,f,f,f]),
+                    ([0,f,0,f,0,0,0,f,0,0,0,0,0,0,0,f]),
+                    ([f,f,0,0,f,0,f,f,f,f,0,f,f,f,f,0]),
+                    ([f,f,f,f,f,0,f,0,0,0,f,f,0,f,0,0]),
+                    ([0,0,0,0,f,0,f,f,0,f,f,0,0,f,0,0]),
+                    ([0,f,f,0,f,0,0,0,0,f,0,0,0,0,0,0]),
+                    ([0,f,0,0,f,0,f,f,f,f,f,f,f,f,f,0]),
+                    ([0,f,f,f,f,0,f,0,0,0,0,0,0,0,f,0]),
+                    ([0,0,f,0,0,0,f,0,f,0,f,f,f,0,f,0]),
+                    ([0,f,f,f,f,f,f,0,f,f,f,0,f,f,f,0]),
+                    ([0,0,0,0,0,0,f,0,0,0,0,0,0,0,0,0])
+                  ]
+                ),
+                ( #start declartng level one
+                  status: ['The Labyrinth: Level seven']
+                  rules: [ ] #these are the rules that will be implemented
+                  board: [
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,f,f,f,f,f,f,f,f,f,f,f,f,0,0,0]),
+                    ([0,f,0,0,0,0,0,0,0,0,0,0,f,0,0,0]),
+                    ([0,f,f,f,f,f,f,f,f,f,0,0,f,0,0,0]),
+                    ([0,f,0,0,0,0,0,0,0,0,0,0,f,0,0,0]),
+                    ([0,f,f,f,f,1,f,f,0,0,0,0,f,f,0,0]),
+                    ([0,0,0,0,0,f,0,f,f,f,f,0,0,1,f,f]),
+                    ([0,0,0,0,0,f,0,0,0,0,f,f,f,1,0,0]),
+                    ([0,0,0,0,0,f,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,f,0,0,0,0,0,0,0,0,0,0]),
+                    ([f,f,f,f,f,f,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,f,0,0,0,0,0,f,f,f,0,0]),
+                    ([0,0,0,0,0,f,f,f,f,f,0,0,0,f,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,f,f,f,f,f,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+                  ]
+                ),
+                ( #start declartng level one
+                  status: ['The Labyrinth: Level eight']
+                  rules: [ ] #these are the rules that will be implemented
+                  board: [
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,f,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,f,f,f,f,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,f,0,0,f,f,0,1,f,1,f,1,0,0,0]),
+                    ([0,0,f,0,0,f,0,0,f,0,0,0,f,0,0,0]),
+                    ([0,0,1,0,0,1,0,0,f,0,0,0,f,0,0,0]),
+                    ([0,0,1,0,0,1,0,0,f,0,0,0,f,0,0,0]),
+                    ([0,0,1,0,0,1,0,0,f,0,0,0,1,f,f,f]),
+                    ([0,0,1,0,0,f,0,0,f,0,0,0,f,0,0,0]),
+                    ([0,0,1,0,0,f,f,1,f,f,0,0,1,0,0,0]),
+                    ([0,0,f,0,0,0,0,0,f,0,0,0,f,0,0,0]),
+                    ([0,f,f,0,0,0,0,0,f,f,f,f,1,0,0,0]),
+                    ([0,0,f,f,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,f,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([f,f,f,0,0,0,0,0,0,0,0,0,0,0,0,0])
+                  ]
+                ),
+                ( #start declartng level one
+                  status: ['The Labyrinth: Level nine']
+                  rules: [ ] #these are the rules that will be implemented
+                  board: [
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,1,f,1,1,1,1,1,f,1,0,0,0,0,0]),
+                    ([0,f,1,f,1,1,1,1,1,1,1,f,0,0,0,0]),
+                    ([f,f,1,f,1,1,0,1,1,1,1,f,f,f,0,0]),
+                    ([0,f,1,f,1,1,1,1,1,1,1,f,0,f,0,0]),
+                    ([0,0,1,f,1,1,1,1,1,f,1,0,0,f,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,f,1,0,0]),
+                    ([0,0,0,0,0,0,0,1,f,f,f,f,f,0,0,0]),
+                    ([0,0,0,0,0,0,0,f,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,f,f,f,f,f,f,f,f,f]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+                  ]
+                )
+                ( #start declartng level one
+                  status: ['The Labyrinth: ten']
+                  rules: [ ] #these are the rules that will be implemented
+                  board: [
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,f,0,0,0,0,0,0,0,0,0]),
+                    ([f,f,f,f,f,f,f,1,1,1,1,1,1,0,0,0]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,f,0,0,0]),
+                    ([0,0,0,0,0,0,1,1,1,f,f,f,f,0,0,0]),
+                    ([0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,f,0,0,0,0,0,0,0,0]),
+                    ([0,0,0,0,0,0,0,f,f,f,f,f,f,f,f,f]),
+                    ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+                  ]
+                ),
               ( #start declartng level one
-                status: ['The Labyrinth: Level six']
+                status: ['The Labyrinth: Level eleven']
                 rules: [ ] #these are the rules that will be implemented
                 board: [
                   ([0,0,0,0,0,0,0,f,0,0,0,0,0,0,f,0]),
@@ -387,7 +494,7 @@ jQuery ->
                 ]
               ),
               ( #start declartng level one
-                status: ['The Labyrinth: Level seven','Green dose not like to be in a corner.','The power of H.','Blue falls.']
+                status: ['The Labyrinth: Level 12','Green dose not like to be in a corner.','The power of H.','Blue falls.']
                 rules: [
                   new shift_rule(([1,0,0,0,0,0,0,f,0]),([0,0,0,0,0,0,f,f,1]),'fx_silencer'),
                   new shift_rule(([0,f,f,0,0,0,1,0,f]),([0,f,1,0,0,0,f,0,f]),'fx_silencer'),
@@ -493,7 +600,13 @@ jQuery ->
         key = key + (go * scale[Math.floor(Math.random()*scale.length)])
         key = Math.max(9,Math.min(97,key))
         key = [Math.floor(key/12),(key - 12*Math.floor(key/12))]
-        PS.AudioPlay DNA_MUSIC.Piano[key[0]][key[1]]
+        PS.AudioLoad(DNA_MUSIC.Piano[key[0]][key[1]])
+        chanle = PS.AudioPlay DNA_MUSIC.Piano[key[0]][key[1]]
+        unless chanle in G.Music_queue
+          G.Music_queue.push(chanle)
+        if G.Music_queue.length > 10
+          PS.AudioStop(G.Music_queue[0])
+          G.Music_queue.splice(0,1)
         G.Music = key
       #change status
       if G.Tick % G.STATUS.CYCLE == 0

@@ -1,12 +1,9 @@
-// ps2.2.dna.js for Perlenspiel 2.2
+// ps2.2.js for Perlenspiel 2.2
 
 /*
  Perlenspiel is a scheme by Professor Moriarty (bmoriarty@wpi.edu).
  Perlenspiel is Copyright Â© 2009-12 Worcester Polytechnic Institute.
  This file is part of Perlenspiel.
-
- This version of Perlenspiel has been modified by William Decker (bill.dynamicnewalgorithms@gmail.com)
- a change log can be found at http://dynamic-new-algorithms.herokuapp.com/psdna
 
  Perlenspiel is free software: you can redistribute it and/or modify
  it under the terms of the GNU Lesser General Public License as published
@@ -33,7 +30,7 @@ var PS = {
 
     // Constants
 
-    VERSION: "2.2.dna",
+    VERSION: "2.2.3.dna",
     ERROR: "ERROR", // generic error return value
     DEFAULT: "DEFAULT", // use default value
     CURRENT: "CURRENT", // use current value
@@ -281,19 +278,16 @@ PS.UnmakeRGB = function ( rgb )
         {
             return { r: PS.DEFAULT_BEAD_RED, g: PS.DEFAULT_BEAD_GREEN, b: PS.DEFAULT_BEAD_GREEN};
         }
-        PS.Oops(fn + "RGB parameter not a number is is a " + (typeof rgb) + " with a value of " + String(rgb));
-        return PS.ERROR;
+        return PS.Oops(fn + "RGB parameter not a number");
     }
     rgb = Math.floor(rgb);
     if ( rgb < 0 )
     {
-        PS.Oops(fn + "RGB parameter negative");
-        return PS.ERROR;
+        return PS.Oops(fn + "RGB parameter negative");
     }
     if ( rgb > 0xFFFFFF )
     {
-        PS.Oops(fn + "RGB parameter out of range");
-        return PS.ERROR;
+        return PS.Oops(fn + "RGB parameter out of range");
     }
 
     red = rgb / PS.REDSHIFT;
@@ -305,6 +299,143 @@ PS.UnmakeRGB = function ( rgb )
     gval = green * PS.GREENSHIFT;
 
     blue = rgb - rval - gval;
+
+    return { r: red, g: green, b: blue };
+};
+
+// Validate overloaded color parameters
+// [fn] is name of calling function (for error reporting)
+// [rgb], [g] and [b] are parameters
+// Returns {r, g, b} color table if valid, else null
+
+PS.ValidColorParams = function (fn, rgb, g, b)
+{
+    "use strict";
+    var valid, type, red, blue, green, rval, gval;
+
+    valid = false;
+    type = PS.TypeOf(rgb);
+
+    // if it's a number, it's either a multiplex or the start of a triplet
+
+    if ( type === "number" )
+    {
+        if ( g === undefined ) // assume a multiplex
+        {
+            if ( (rgb < 0) || (rgb > 0xFFFFFF) )
+            {
+                PS.Oops(fn + "multiplexed rgb value out of range");
+                return null;
+            }
+            rgb = Math.floor(rgb);
+
+            red = rgb / PS.REDSHIFT;
+            red = Math.floor(red);
+            rval = red * PS.REDSHIFT;
+
+            green = (rgb - rval) / PS.GREENSHIFT;
+            green = Math.floor(green);
+            gval = green * PS.GREENSHIFT;
+
+            blue = rgb - rval - gval;
+            valid = true; // no need to validate	
+        }
+        else // assume a triplet
+        {
+            red = rgb;
+            green = g;
+            blue = b;
+            if ( blue === undefined )
+            {
+                PS.Oops(fn + "b parameter missing in rgb triplet");
+                return null;
+            }
+        }
+    }
+
+    // is rgb a valid table?
+
+    else if ( type === "object" )
+    {
+        red = rgb.r;
+        if ( red === undefined )
+        {
+            PS.Oops(fn + "r element missing in rgb table");
+            return null;
+        }
+        green = rgb.g;
+        if ( green === undefined )
+        {
+            PS.Oops(fn + "g element missing in rgb table");
+            return null;
+        }
+        blue = rgb.b;
+        if ( blue === undefined )
+        {
+            PS.Oops(fn + "b element missing in rgb table");
+            return null;
+        }
+    }
+
+    // is rgb is a valid array?
+
+    else if ( type === "array" )
+    {
+        if ( rgb.length < 3 )
+        {
+            PS.Oops(fn + "rgb array length invalid");
+            return null;
+        }
+        red = rgb[0];
+        green = rgb[1];
+        blue = rgb[2];
+    }
+    else
+    {
+        PS.Oops(fn + "Invalid color parameter");
+        return null;
+    }
+
+    // Validate color values
+
+    if ( !valid )
+    {
+        if ( typeof red !== "number" )
+        {
+            PS.Oops(fn + "red value is not a number");
+            return null;
+        }
+        red = Math.floor(red);
+        if ( (red < 0) && (red > 255) )
+        {
+            PS.Oops(fn + "red value out of range [" + red + "]");
+            return null;
+        }
+
+        if ( typeof green !== "number" )
+        {
+            PS.Oops(fn + "green value is not a number");
+            return null;
+        }
+        green = Math.floor(green);
+        if ( (green < 0) && (green > 255) )
+        {
+            PS.Oops(fn + "green value out of range [" + green + "]");
+            return null;
+        }
+
+        if ( typeof blue !== "number" )
+        {
+            PS.Oops(fn + "blue value is not a number");
+            return null;
+        }
+        blue = Math.floor(blue);
+        if ( (blue < 0) && (blue > 255) )
+        {
+            PS.Oops(fn + "blue value out of range [" + blue + "]");
+            return null;
+        }
+    }
 
     return { r: red, g: green, b: blue };
 };
@@ -427,28 +558,6 @@ PS.InitBead = function (xpos, ypos, size, bgcolor)
     bead.offContext.textBaseline = "middle";
 
     return bead;
-};
-
-// Fast r/g/b bead draw
-// Assumes all params verified, default alpha, no flashing
-// Does NOT return rgb value!
-// Use only when game is fully debugged!
-
-PS.BeadColorFast = function ( x, y, r, g, b )
-{
-    "use strict";
-    var i, bead;
-
-    i = x + (y * PS.Grid.x); // get index of bead
-    bead = PS.Grid.beads[i];
-
-    bead.empty = false; // mark this bead as assigned
-    bead.alpha = PS.DEFAULT_ALPHA; // set to default alpha
-    bead.alphaRed = bead.red = r;
-    bead.alphaGreen = bead.green = g;
-    bead.alphaBlue = bead.blue = b;
-    bead.colorNow = bead.color = PS.RGBString( r, g, b );
-    PS.DrawBead(bead);
 };
 
 // Draws [bead]
@@ -713,6 +822,9 @@ PS.GetBead = function (x, y, fn)
 
 // API Functions
 
+// PS.GridSize()
+// Returns true on success, else PS.ERROR
+
 PS.GridSize = function (w, h)
 {
     "use strict";
@@ -722,13 +834,11 @@ PS.GridSize = function (w, h)
 
     if ( typeof w !== "number" )
     {
-        PS.Oops(fn + "Width param not a number");
-        return;
+        return PS.Oops(fn + "Width param not a number");
     }
     if ( typeof h !== "number" )
     {
-        PS.Oops(fn + "Height param not a number");
-        return;
+        return PS.Oops(fn + "Height param not a number");
     }
 
     w = Math.floor(w);
@@ -785,8 +895,7 @@ PS.GridSize = function (w, h)
     PS.Grid = PS.InitGrid(w, h);
     if ( !PS.Grid )
     {
-        PS.Oops(fn + "Grid initialization failed");
-        return;
+        return PS.Oops(fn + "Grid initialization failed");
     }
 
     // Reset mouse coordinates
@@ -807,12 +916,17 @@ PS.GridSize = function (w, h)
             PS.DrawGrid();
         }
     }
+
+    return true;
 };
 
-PS.GridBGColor = function ( rgb )
+// PS.GridBGColor()
+// Returns rgb of grid background on success, else PS.ERROR
+
+PS.GridBGColor = function ( rgb, g, b )
 {
     "use strict";
-    var fn, current, colors, e;
+    var fn, current, colors, red, green, blue, e;
 
     fn = "[PS.GridBGColor] ";
     current = (PS.Grid.bgRed * PS.REDSHIFT) + (PS.Grid.bgGreen * 256) + PS.Grid.bgBlue;
@@ -827,52 +941,54 @@ PS.GridBGColor = function ( rgb )
     if ( rgb === PS.DEFAULT )
     {
         rgb = PS.DEFAULT_BG_COLOR;
+        red = PS.DEFAULT_BG_RED;
+        green = PS.DEFAULT_BG_GREEN;
+        blue = PS.DEFAULT_BG_BLUE;
     }
     else
     {
-        rgb = PS.ValidRGB( rgb, fn );
-        if ( rgb < 0 )
+        colors = PS.ValidColorParams(fn, rgb, g, b);
+        if ( !colors )
         {
             return PS.ERROR;
         }
+        red = colors.r;
+        green = colors.g;
+        blue = colors.b;
     }
 
-    colors = PS.UnmakeRGB(rgb);
-    if ( colors )
+    PS.Grid.bgRed = red;
+    PS.Grid.bgGreen = green;
+    PS.Grid.bgBlue = blue;
+    PS.Grid.bgColor = PS.RGBString(red, green, blue);
+
+    // Reset browser background
+
+    e = document.body;
+    e.style.backgroundColor = PS.Grid.bgColor;
+
+    // reset status line background
+
+    e = document.getElementById("status");
+    if ( e )
     {
-        PS.Grid.bgRed = colors.r;
-        PS.Grid.bgGreen = colors.g;
-        PS.Grid.bgBlue = colors.b;
-        PS.Grid.bgColor = PS.RGBString(colors.r, colors.g, colors.b);
-
-        // Reset browser background
-
-        e = document.body;
         e.style.backgroundColor = PS.Grid.bgColor;
+    }
 
-        // reset status line background
+    // redraw canvas
 
-        e = document.getElementById("status");
-        if ( e )
-        {
-            e.style.backgroundColor = PS.Grid.bgColor;
-        }
-
-        // redraw canvas
-
-        e = document.getElementById("screen");
-        if ( e )
-        {
-            e.width = PS.CANVAS_SIZE; // setting width erases
-            PS.DrawGrid();
-        }
+    e = document.getElementById("screen");
+    if ( e )
+    {
+        e.width = PS.CANVAS_SIZE; // setting width erases
+        PS.DrawGrid();
     }
 
     return rgb;
 };
 
 // PS.MakeRGB (r, g, b)
-// Takes three colors and returns multiplexed rgb value, or 0 (black) if error
+// Takes three colors and returns multiplexed rgb value, or PS.ERROR if error
 
 PS.MakeRGB = function (r, g, b)
 {
@@ -883,8 +999,7 @@ PS.MakeRGB = function (r, g, b)
 
     if ( typeof r !== "number" )
     {
-        PS.Oops(fn + "R parameter not a number");
-        return PS.ERROR;
+        return PS.Oops(fn + "R parameter not a number");
     }
     r = Math.floor(r);
     if ( r < 0 )
@@ -898,8 +1013,7 @@ PS.MakeRGB = function (r, g, b)
 
     if ( typeof g !== "number" )
     {
-        PS.Oops(fn + "G parameter not a number");
-        return PS.ERROR;
+        return PS.Oops(fn + "G parameter not a number");
     }
     g = Math.floor(g);
     if ( g < 0 )
@@ -913,8 +1027,7 @@ PS.MakeRGB = function (r, g, b)
 
     if ( typeof b !== "number" )
     {
-        PS.Oops(fn + "B parameter not a number");
-        return PS.ERROR;
+        return PS.Oops(fn + "B parameter not a number");
     }
     b = Math.floor(b);
     if ( b < 0 )
@@ -1114,10 +1227,15 @@ PS.DoBeadColor = function ( x, y, rgb, r, g, b )
     return rgb;
 };
 
-PS.BeadColor = function (x, y, rgb)
+// Now accepts overloaded color parameters
+// [rbg] can be either a multiplexed rgb value or an {r, g, b} color table
+// else three parameters interpreted as r/g/b triplet
+// returns current bead color or PS.ERROR
+
+PS.BeadColor = function (x, y, rgb, g, b)
 {
     "use strict";
-    var fn, colors, r, g, b, i, j;
+    var fn, colors, red, green, blue, i, j;
 
     fn = "[PS.BeadColor] ";
 
@@ -1126,19 +1244,18 @@ PS.BeadColor = function (x, y, rgb)
     if ( (rgb === PS.DEFAULT) || (rgb === PS.EMPTY) )
     {
         rgb = PS.EMPTY;
-        r = g = b = undefined;
+        red = green = blue = undefined;
     }
     else if ( (rgb !== undefined) && (rgb !== PS.CURRENT) )
     {
-        rgb = PS.ValidRGB( rgb, fn );
-        if ( rgb < 0 )
+        colors = PS.ValidColorParams(fn, rgb, g, b);
+        if ( !colors )
         {
             return PS.ERROR;
         }
-        colors = PS.UnmakeRGB( rgb );
-        r = colors.r;
-        g = colors.g;
-        b = colors.b;
+        red = colors.r;
+        green = colors.g;
+        blue = colors.b;
     }
 
     if ( x === PS.ALL )
@@ -1149,7 +1266,7 @@ PS.BeadColor = function (x, y, rgb)
             {
                 for ( i = 0; i < PS.Grid.x; i += 1 )
                 {
-                    rgb = PS.DoBeadColor( i, j, rgb, r, g, b );
+                    rgb = PS.DoBeadColor( i, j, rgb, red, green, blue );
                 }
             }
         }
@@ -1161,7 +1278,7 @@ PS.BeadColor = function (x, y, rgb)
         {
             for ( i = 0; i < PS.Grid.x; i += 1 ) // do entire row
             {
-                rgb = PS.DoBeadColor( i, y, rgb, r, g, b );
+                rgb = PS.DoBeadColor( i, y, rgb, red, green, blue );
             }
         }
     }
@@ -1173,7 +1290,7 @@ PS.BeadColor = function (x, y, rgb)
         }
         for ( j = 0; j < PS.Grid.y; j += 1 ) // do entire column
         {
-            rgb = PS.DoBeadColor( x, j, rgb, r, g, b );
+            rgb = PS.DoBeadColor( x, j, rgb, red, green, blue );
         }
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
@@ -1182,7 +1299,7 @@ PS.BeadColor = function (x, y, rgb)
     }
     else
     {
-        rgb = PS.DoBeadColor( x, y, rgb, r, g, b ); // do one bead
+        rgb = PS.DoBeadColor( x, y, rgb, red, green, blue ); // do one bead
     }
 
     return rgb;
@@ -1252,8 +1369,7 @@ PS.BeadAlpha = function (x, y, a)
     {
         if ( typeof a !== "number" )
         {
-            PS.Oops(fn + "alpha param is not a number");
-            return PS.ERROR;
+            return PS.Oops(fn + "alpha param is not a number");
         }
 
         // clamp value
@@ -1368,8 +1484,7 @@ PS.BeadBorderWidth = function (x, y, width)
     {
         if ( typeof width !== "number" )
         {
-            PS.Oops(fn + "width param is not a number");
-            return PS.ERROR;
+            return PS.Oops(fn + "width param is not a number");
         }
         width = Math.floor(width);
         if ( width < 0 )
@@ -1468,31 +1583,30 @@ PS.DoBeadBorderColor = function (x, y, rgb, r, g, b)
     return rgb;
 };
 
-PS.BeadBorderColor = function (x, y, rgb)
+PS.BeadBorderColor = function (x, y, rgb, g, b)
 {
     "use strict";
-    var fn, colors, r, g, b, i, j;
+    var fn, colors, red, green, blue, i, j;
 
     fn = "[PS.BeadBorderColor] ";
 
     if ( rgb === PS.DEFAULT )
     {
         rgb = PS.DEFAULT_BORDER_COLOR;
-        r = PS.DEFAULT_BORDER_RED;
-        g = PS.DEFAULT_BORDER_GREEN;
-        b = PS.DEFAULT_BORDER_BLUE;
+        red = PS.DEFAULT_BORDER_RED;
+        green = PS.DEFAULT_BORDER_GREEN;
+        blue = PS.DEFAULT_BORDER_BLUE;
     }
     else if ( (rgb !== undefined) && (rgb !== PS.CURRENT) )
     {
-        rgb = PS.ValidRGB( rgb, fn );
-        if ( rgb < 0 )
+        colors = PS.ValidColorParams(fn, rgb, g, b);
+        if ( !colors )
         {
             return PS.ERROR;
         }
-        colors = PS.UnmakeRGB( rgb );
-        r = colors.r;
-        g = colors.g;
-        b = colors.b;
+        red = colors.r;
+        green = colors.g;
+        blue = colors.b;
     }
 
     if ( x === PS.ALL )
@@ -1503,7 +1617,7 @@ PS.BeadBorderColor = function (x, y, rgb)
             {
                 for ( i = 0; i < PS.Grid.x; i += 1 )
                 {
-                    rgb = PS.DoBeadBorderColor( i, j, rgb, r, g, b );
+                    rgb = PS.DoBeadBorderColor( i, j, rgb, red, green, blue );
                 }
             }
         }
@@ -1515,7 +1629,7 @@ PS.BeadBorderColor = function (x, y, rgb)
         {
             for ( i = 0; i < PS.Grid.x; i += 1 ) // do entire row
             {
-                rgb = PS.DoBeadBorderColor( i, y, rgb, r, g, b );
+                rgb = PS.DoBeadBorderColor( i, y, rgb, red, green, blue );
             }
         }
     }
@@ -1527,7 +1641,7 @@ PS.BeadBorderColor = function (x, y, rgb)
         }
         for ( j = 0; j < PS.Grid.y; j += 1 ) // do entire column
         {
-            rgb = PS.DoBeadBorderColor( x, j, rgb, r, g, b );
+            rgb = PS.DoBeadBorderColor( x, j, rgb, red, green, blue );
         }
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
@@ -1536,7 +1650,7 @@ PS.BeadBorderColor = function (x, y, rgb)
     }
     else
     {
-        rgb = PS.DoBeadBorderColor( x, y, rgb, r, g, b ); // do one bead
+        rgb = PS.DoBeadBorderColor( x, y, rgb, red, green, blue ); // do one bead
     }
 
     return rgb;
@@ -1592,8 +1706,7 @@ PS.BeadBorderAlpha = function (x, y, a)
     {
         if ( typeof a !== "number" )
         {
-            PS.Oops(fn + "alpha param is not a number");
-            return PS.ERROR;
+            return PS.Oops(fn + "alpha param is not a number");
         }
 
         // clamp value
@@ -1717,8 +1830,7 @@ PS.BeadGlyph = function (x, y, g)
         {
             if ( g.length < 1 )
             {
-                PS.Oops(fn + "glyph param is empty string");
-                return 0;
+                return PS.Oops(fn + "glyph param is empty string");
             }
             g = g.charCodeAt(0); // use only first character
         }
@@ -1739,8 +1851,7 @@ PS.BeadGlyph = function (x, y, g)
         }
         else
         {
-            PS.Oops(fn + "glyph param not a string or number");
-            return PS.ERROR;
+            return PS.Oops(fn + "glyph param not a string or number");
         }
     }
 
@@ -1829,31 +1940,30 @@ PS.DoBeadGlyphColor = function (x, y, rgb, r, g, b)
     return rgb;
 };
 
-PS.BeadGlyphColor = function (x, y, rgb)
+PS.BeadGlyphColor = function (x, y, rgb, g, b)
 {
     "use strict";
-    var fn, colors, r, g, b, i, j;
+    var fn, colors, red, green, blue, i, j;
 
     fn = "[PS.BeadGlyphColor] ";
 
     if ( rgb === PS.DEFAULT )
     {
         rgb = PS.DEFAULT_GLYPH_COLOR;
-        r = PS.DEFAULT_GLYPH_RED;
-        g = PS.DEFAULT_GLYPH_GREEN;
-        b = PS.DEFAULT_GLYPH_BLUE;
+        red = PS.DEFAULT_GLYPH_RED;
+        green = PS.DEFAULT_GLYPH_GREEN;
+        blue = PS.DEFAULT_GLYPH_BLUE;
     }
     else if ( (rgb !== undefined) && (rgb !== PS.CURRENT) )
     {
-        rgb = PS.ValidRGB( rgb, fn );
-        if ( rgb < 0 )
+        colors = PS.ValidColorParams(fn, rgb, g, b);
+        if ( !colors )
         {
             return PS.ERROR;
         }
-        colors = PS.UnmakeRGB( rgb );
-        r = colors.r;
-        g = colors.g;
-        b = colors.b;
+        red = colors.r;
+        green = colors.g;
+        blue = colors.b;
     }
 
     if ( x === PS.ALL )
@@ -1864,7 +1974,7 @@ PS.BeadGlyphColor = function (x, y, rgb)
             {
                 for ( i = 0; i < PS.Grid.x; i += 1 )
                 {
-                    rgb = PS.DoBeadGlyphColor( i, j, rgb, r, g, b );
+                    rgb = PS.DoBeadGlyphColor( i, j, rgb, red, green, blue );
                 }
             }
         }
@@ -1876,7 +1986,7 @@ PS.BeadGlyphColor = function (x, y, rgb)
         {
             for ( i = 0; i < PS.Grid.x; i += 1 ) // do entire row
             {
-                rgb = PS.DoBeadGlyphColor( i, y, rgb, r, g, b );
+                rgb = PS.DoBeadGlyphColor( i, y, rgb, red, green, blue );
             }
         }
     }
@@ -1888,7 +1998,7 @@ PS.BeadGlyphColor = function (x, y, rgb)
         }
         for ( j = 0; j < PS.Grid.y; j += 1 ) // do entire column
         {
-            rgb = PS.DoBeadGlyphColor( x, j, rgb, r, g, b );
+            rgb = PS.DoBeadGlyphColor( x, j, rgb, red, green, blue );
         }
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
@@ -1897,7 +2007,7 @@ PS.BeadGlyphColor = function (x, y, rgb)
     }
     else
     {
-        rgb = PS.DoBeadGlyphColor( x, y, rgb, r, g, b ); // do one bead
+        rgb = PS.DoBeadGlyphColor( x, y, rgb, red, green, blue ); // do one bead
     }
 
     return rgb;
@@ -2027,31 +2137,30 @@ PS.DoBeadFlashColor = function (x, y, rgb, r, g, b)
     return rgb;
 };
 
-PS.BeadFlashColor = function (x, y, rgb)
+PS.BeadFlashColor = function (x, y, rgb, g, b)
 {
     "use strict";
-    var fn, r, g, b, colors, i, j;
+    var fn, red, green, blue, colors, i, j;
 
     fn = "[PS.BeadFlashColor] ";
 
     if ( rgb === PS.DEFAULT )
     {
         rgb = PS.DEFAULT_FLASH_COLOR;
-        r = PS.DEFAULT_FLASH_RED;
-        g = PS.DEFAULT_FLASH_GREEN;
-        b = PS.DEFAULT_FLASH_BLUE;
+        red = PS.DEFAULT_FLASH_RED;
+        green = PS.DEFAULT_FLASH_GREEN;
+        blue = PS.DEFAULT_FLASH_BLUE;
     }
     else if ( (rgb !== undefined) && (rgb !== PS.CURRENT) )
     {
-        rgb = PS.ValidRGB( rgb, fn );
-        if ( rgb < 0 )
+        colors = PS.ValidColorParams(fn, rgb, g, b);
+        if ( !colors )
         {
             return PS.ERROR;
         }
-        colors = PS.UnmakeRGB( rgb );
-        r = colors.r;
-        g = colors.g;
-        b = colors.b;
+        red = colors.r;
+        green = colors.g;
+        blue = colors.b;
     }
 
     if ( x === PS.ALL )
@@ -2062,7 +2171,7 @@ PS.BeadFlashColor = function (x, y, rgb)
             {
                 for ( i = 0; i < PS.Grid.x; i += 1 )
                 {
-                    rgb = PS.DoBeadFlashColor( i, j, rgb, r, g, b );
+                    rgb = PS.DoBeadFlashColor( i, j, rgb, red, green, blue );
                 }
             }
         }
@@ -2074,7 +2183,7 @@ PS.BeadFlashColor = function (x, y, rgb)
         {
             for ( i = 0; i < PS.Grid.x; i += 1 ) // do entire row
             {
-                rgb = PS.DoBeadFlashColor( i, y, rgb, r, g, b );
+                rgb = PS.DoBeadFlashColor( i, y, rgb, red, green, blue );
             }
         }
     }
@@ -2086,7 +2195,7 @@ PS.BeadFlashColor = function (x, y, rgb)
         }
         for ( j = 0; j < PS.Grid.y; j += 1 ) // do entire column
         {
-            rgb = PS.DoBeadFlashColor( x, j, rgb, r, g, b );
+            rgb = PS.DoBeadFlashColor( x, j, rgb, red, green, blue );
         }
     }
     else if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) ) // verify both params
@@ -2095,7 +2204,7 @@ PS.BeadFlashColor = function (x, y, rgb)
     }
     else
     {
-        rgb = PS.DoBeadFlashColor( x, y, rgb, r, g, b ); // do one bead
+        rgb = PS.DoBeadFlashColor( x, y, rgb, red, green, blue ); // do one bead
     }
 
     return rgb;
@@ -2226,8 +2335,7 @@ PS.BeadAudio = function (x, y, audio, volume)
         {
             if ( typeof audio !== "string" )
             {
-                PS.Oops(fn + "audio param is not a string");
-                return PS.ERROR;
+                return PS.Oops(fn + "audio param is not a string");
             }
             if ( audio.length < 1 )
             {
@@ -2248,8 +2356,7 @@ PS.BeadAudio = function (x, y, audio, volume)
         {
             if ( typeof volume !== "number" )
             {
-                PS.Oops(fn + "volume param is not a number");
-                return PS.ERROR;
+                return PS.Oops(fn + "volume param is not a number");
             }
             if ( volume < 0 )
             {
@@ -2347,8 +2454,7 @@ PS.BeadFunction = function (x, y, exec)
         }
         else if ( typeof exec !== "function" )
         {
-            PS.Oops(fn + "exec param not a valid function");
-            return PS.ERROR;
+            return PS.Oops(fn + "exec param not a valid function");
         }
     }
 
@@ -2478,9 +2584,6 @@ PS.BeadTouch = function (x, y)
 
 // Set message text
 
-PS.Status = "Perlenspiel";
-PS.StatusHue = 0;
-
 PS.StatusText = function (str)
 {
     "use strict";
@@ -2493,22 +2596,19 @@ PS.StatusText = function (str)
     {
         if ( type !== "string" )
         {
-            PS.Oops(fn + "Parameter is not a string");
+            return PS.Oops(fn + "Parameter is not a string");
         }
-        else
+        e = document.getElementById("status");
+        if ( e )
         {
-            e = document.getElementById("status");
-            if ( e )
+            if ( PS.StatusFading ) // start the fade
             {
-                if ( PS.StatusFading ) // start the fade
-                {
-                    e.style.color = PS.Grid.bgColor;
-                    PS.StatusPhase = 0;
-                }
-                e.value = str;
+                e.style.color = PS.Grid.bgColor;
+                PS.StatusPhase = 0;
             }
-            PS.Status = str;
+            e.value = str;
         }
+        PS.Status = str;
     }
     return PS.Status;
 };
@@ -2518,7 +2618,7 @@ PS.StatusColor = function (rgb)
     "use strict";
     var fn, colors, e;
 
-    fn = "[PS.StatusText] ";
+    fn = "[PS.StatusColor] ";
 
     if ( (rgb !== undefined) && (rgb !== PS.CURRENT) )
     {
@@ -2680,7 +2780,7 @@ PS.Oops = function (str)
 
     if ( typeof str !== "string" )
     {
-        return;
+        str = "???";
     }
 
     e = document.getElementById("footer");
@@ -2689,21 +2789,10 @@ PS.Oops = function (str)
         e.innerHTML = str;
     }
 
-    // Also display on debugger if open
-
-//	if ( PS.DebugWindow )
-//	{
-//		e = document.getElementById("monitor");
-//		if ( e )
-//		{
-//			e.value += ("ERROR: " + str + "\n");
-//			e.scrollTop = e.scrollHeight; // keep it scrolled down			
-//		}
-//	}
-
     PS.Debug( "ERROR: " + str + "\n" );
-
     PS.AudioPlay("fx_uhoh");
+
+    return PS.ERROR;
 };
 
 // Set up user clock
@@ -2719,8 +2808,7 @@ PS.Clock = function ( ticks )
     {
         if ( typeof ticks !== "number" )
         {
-            PS.Oops(fn + "ticks parameter not a number");
-            return PS.ERROR;
+            return PS.Oops(fn + "ticks parameter not a number");
         }
         ticks = Math.floor(ticks);
         if ( ticks < 1 )
@@ -2729,13 +2817,10 @@ PS.Clock = function ( ticks )
         }
         else if ( typeof PS.Tick !== "function" )
         {
-            PS.Oops(fn + "PS.Tick function undefined");
+            return PS.Oops(fn + "PS.Tick function undefined");
         }
-        else
-        {
-            PS.UserDelay = 0;
-            PS.UserClock = ticks;
-        }
+        PS.UserDelay = 0;
+        PS.UserClock = ticks;
     }
 
     return PS.UserClock;
@@ -2806,8 +2891,8 @@ PS.DoTimer = function ()
                 }
                 catch (err)
                 {
-                    PS.Oops("PS.Tick() failed [" + err.message + "]" );
                     PS.UserClock = 0; // stop the user timer
+                    PS.Oops("PS.Tick() failed [" + err.message + "]" );
                 }
             }
         }
@@ -2888,31 +2973,28 @@ PS.FlashNext = function ()
 };
 
 // System initialization
+// Detect x/y of mouse over grid, -1 if not over grid
 
-// Records the x/y of mouse over grid, -1 if not over grid
-
-PS.MouseXY = function (event)
+PS.MouseXY = function (canvas, event)
 {
     "use strict";
-    var canvas, x, y, beads, bead, row, col, i;
+    var x, y, beads, bead, row, col, i;
 
     if ( PS.Grid )
     {
-        canvas = document.getElementById("screen");
-
-        if ( event.x && event.y )
+        if ( event.x && event.y ) // Webkit, IE
         {
             x = event.x;
             y = event.y;
         }
         else // Firefox method to get the position
         {
-            x = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-            y = event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+            x = event.clientX;
+            y = event.clientY;
         }
 
-        x -= canvas.offsetLeft;
-        y -= canvas.offsetTop;
+        x += ( document.body.scrollLeft + document.documentElement.scrollLeft - canvas.offsetLeft );
+        y += ( document.body.scrollTop + document.documentElement.scrollTop - canvas.offsetTop);
 
         // Over the grid?
 
@@ -2963,7 +3045,7 @@ PS.MouseDown = function (event)
     "use strict";
     var bead;
 
-    PS.MouseXY(event);
+    PS.MouseXY(this, event);
     if ( PS.MouseX >= 0 )
     {
         bead = PS.Grid.beads[PS.MouseX + (PS.MouseY * PS.Grid.x)];
@@ -3012,7 +3094,7 @@ PS.MouseUp = function (event)
 
     if ( PS.Grid && PS.Release ) // only if grid and function exist
     {
-        PS.MouseXY(event);
+        PS.MouseXY(this, event);
         if ( PS.MouseX >= 0 )
         {
             bead = PS.Grid.beads[PS.MouseX + (PS.MouseY * PS.Grid.x)];
@@ -3035,7 +3117,7 @@ PS.MouseMove = function (event)
     "use strict";
     var bead, last;
 
-    PS.MouseXY(event);
+    PS.MouseXY(this, event);
 
     if ( PS.MouseX >= 0 )
     {
@@ -3503,8 +3585,7 @@ PS.Random = function (val)
     fn = "[PS.Random] ";
     if ( typeof val !== "number" )
     {
-        PS.Oops(fn + "Parameter is not a number");
-        return PS.ERROR;
+        return PS.Oops(fn + "Parameter is not a number");
     }
     val = Math.floor(val);
     if ( val < 2 )
@@ -3538,8 +3619,7 @@ PS.Piano = function ( val, flag )
 
     if ( typeof val !== "number" )
     {
-        PS.Oops(fn + "Parameter is not a number");
-        return PS.ERROR;
+        return PS.Oops(fn + "Parameter is not a number");
     }
     val = Math.floor(val);
     if ( val < 1 )
@@ -3577,8 +3657,7 @@ PS.Harpsichord = function ( val, flag )
 
     if ( typeof val !== "number" )
     {
-        PS.Oops(fn + "Parameter is not a number");
-        return PS.ERROR;
+        return PS.Oops(fn + "Parameter is not a number");
     }
     val = Math.floor(val);
     if ( val < 1 )
@@ -3614,8 +3693,7 @@ PS.Xylophone = function ( val )
 
     if ( typeof val !== "number" )
     {
-        PS.Oops(fn + "Parameter is not a number");
-        return PS.ERROR;
+        return PS.Oops(fn + "Parameter is not a number");
     }
     val = Math.floor(val);
     if ( val < 1 )
@@ -3642,18 +3720,15 @@ PS.ImageLoad = function ( file, func )
 
     if ( typeof file !== "string" )
     {
-        PS.Oops(fn + "Parameter 1 is not a string");
-        return PS.ERROR;
+        return PS.Oops(fn + "Parameter 1 is not a string");
     }
     if ( file.length < 1 )
     {
-        PS.Oops(fn + "Parameter 1 is an empty string");
-        return PS.ERROR;
+        return PS.Oops(fn + "Parameter 1 is an empty string");
     }
     if ( (func !== undefined) && (typeof func !== "function") )
     {
-        PS.Oops(fn + "Parameter 2 is not a function");
-        return PS.ERROR;
+        return PS.Oops(fn + "Parameter 2 is not a function");
     }
     try
     {
@@ -3667,8 +3742,7 @@ PS.ImageLoad = function ( file, func )
     }
     catch (err)
     {
-        PS.Oops(fn + "failed [" + err.message + "]");
-        return PS.ERROR;
+        return PS.Oops(fn + "failed [" + err.message + "]");
     }
 };
 
@@ -3693,8 +3767,7 @@ PS.ImageData = function ( img, alpha )
     w = img.width;
     if ( (typeof w !== "number") || (w < 0) )
     {
-        PS.Oops(fn + "Invalid width parameter");
-        return PS.ERROR;
+        return PS.Oops(fn + "Invalid width parameter");
     }
     w = Math.floor(w);
     if ( w > PS.GRID_MAX )
@@ -3705,8 +3778,7 @@ PS.ImageData = function ( img, alpha )
     h = img.height;
     if ( (typeof h !== "number") || (h < 0) )
     {
-        PS.Oops(fn + "Invalid height parameter");
-        return PS.ERROR;
+        return PS.Oops(fn + "Invalid height parameter");
     }
     h = Math.floor(h);
     if ( h > PS.GRID_MAX )
@@ -3723,8 +3795,7 @@ PS.ImageData = function ( img, alpha )
     }
     catch (err)
     {
-        PS.Oops(fn + "failed @ 1 [" + err.message + "]");
-        return PS.ERROR;
+        return PS.Oops(fn + "failed @ 1 [" + err.message + "]");
     }
 
     // fetch the data and return it
@@ -3735,8 +3806,7 @@ PS.ImageData = function ( img, alpha )
     }
     catch (err2)
     {
-        PS.Oops(fn + "failed @ 2 [" + err2.message + "]");
-        return PS.ERROR;
+        return PS.Oops(fn + "failed @ 2 [" + err2.message + "]");
     }
 
     // imgData is read-only for some reason
@@ -3810,8 +3880,7 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
 
     if ( typeof imgdata !== "object" )
     {
-        PS.Oops(fn + "parameter 1 is not a table");
-        return PS.ERROR;
+        return PS.Oops(fn + "parameter 1 is not a table");
     }
 
     bytes = imgdata.data; // check this?
@@ -3819,34 +3888,29 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
     w = imgdata.width;
     if ( typeof w !== "number" )
     {
-        PS.Oops(fn + "imgdata.width is not a number");
-        return PS.ERROR;
+        return PS.Oops(fn + "imgdata.width is not a number");
     }
     w = Math.floor(w);
     if ( w < 1 )
     {
-        PS.Oops(fn + "imgdata.width < 1");
-        return PS.ERROR;
+        return PS.Oops(fn + "imgdata.width < 1");
     }
 
     h = imgdata.height;
     if ( typeof h !== "number" )
     {
-        PS.Oops(fn + "imgdata.height is not a number");
-        return PS.ERROR;
+        return PS.Oops(fn + "imgdata.height is not a number");
     }
     h = Math.floor(h);
     if ( h < 1 )
     {
-        PS.Oops(fn + "imgdata.height < 1");
-        return PS.ERROR;
+        return PS.Oops(fn + "imgdata.height < 1");
     }
 
     pixsize = imgdata.pixelSize;
     if ( typeof pixsize !== "number" )
     {
-        PS.Oops(fn + "imgdata.pixelSize is not a number");
-        return PS.ERROR;
+        return PS.Oops(fn + "imgdata.pixelSize is not a number");
     }
     pixsize = Math.floor(pixsize);
     if ( pixsize === 1 )
@@ -3855,15 +3919,13 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
     }
     else if ( (pixsize !== 3) && (pixsize !== 4) )
     {
-        PS.Oops(fn + "invalid pixelSize");
-        return PS.ERROR;
+        return PS.Oops(fn + "invalid pixelSize");
     }
 
     size = w * h * pixsize;
     if ( bytes.length !== size )
     {
-        PS.Oops(fn + "invalid data length [" + imgdata.data.length + "]");
-        return PS.ERROR;
+        return PS.Oops(fn + "invalid data length [" + imgdata.data.length + "]");
     }
 
     if ( (xpos === undefined) || (xpos === PS.DEFAULT) )
@@ -3874,8 +3936,7 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
     {
         if ( typeof xpos !== "number" )
         {
-            PS.Oops(fn + "parameter 2 is not a number");
-            return PS.ERROR;
+            return PS.Oops(fn + "parameter 2 is not a number");
         }
         xpos = Math.floor(xpos);
 
@@ -3895,8 +3956,7 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
     {
         if ( typeof ypos !== "number" )
         {
-            PS.Oops(fn + "parameter 3 is not a number");
-            return PS.ERROR;
+            return PS.Oops(fn + "parameter 3 is not a number");
         }
         ypos = Math.floor(ypos);
 
@@ -3930,8 +3990,7 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
                         rgb = bytes[ptr];
                         if ( typeof rgb !== "number" )
                         {
-                            PS.Oops(fn + "non-numeric rgb at position " + ptr);
-                            return PS.ERROR;
+                            return PS.Oops(fn + "non-numeric rgb at position " + ptr);
                         }
                         rgb = Math.floor(rgb);
                         if ( rgb < 1 )
@@ -3960,8 +4019,7 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
                         r = bytes[ptr];
                         if ( typeof r !== "number" )
                         {
-                            PS.Oops(fn + "non-numeric red at position " + ptr);
-                            return PS.ERROR;
+                            return PS.Oops(fn + "non-numeric red at position " + ptr);
                         }
                         r = Math.floor(r);
                         if ( r < 1 )
@@ -3976,8 +4034,7 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
                         g = bytes[ptr + 1];
                         if ( typeof g !== "number" )
                         {
-                            PS.Oops(fn + "non-numeric green at position " + ptr);
-                            return PS.ERROR;
+                            return PS.Oops(fn + "non-numeric green at position " + ptr);
                         }
                         g = Math.floor(g);
                         if ( g < 1 )
@@ -3992,8 +4049,7 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
                         b = bytes[ptr + 2];
                         if ( typeof b !== "number" )
                         {
-                            PS.Oops(fn + "non-numeric blue at position " + ptr);
-                            return PS.ERROR;
+                            return PS.Oops(fn + "non-numeric blue at position " + ptr);
                         }
                         b = Math.floor(b);
                         if ( b < 1 )
@@ -4010,8 +4066,7 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
                             a = bytes[ptr + 3];
                             if ( typeof a !== "number" )
                             {
-                                PS.Oops(fn + "non-numeric alpha at position " + ptr);
-                                return PS.ERROR;
+                                return PS.Oops(fn + "non-numeric alpha at position " + ptr);
                             }
                             a = Math.floor(a / 2.55); // convert 0-255 range to 0-100
                             if ( a < 1 )
