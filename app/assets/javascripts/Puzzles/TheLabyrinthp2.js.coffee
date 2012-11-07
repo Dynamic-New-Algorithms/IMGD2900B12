@@ -300,12 +300,7 @@ jQuery ->
       Tick: 0 #keeps track of how many tick the game has had
       Music_index: 0
       Music_Playing: true
-      Music: [
-              (['piano_f2']), #play just this one
-              (['piano_d4','piano_c4']), #play both of these
-              ([]), #don't play
-              ([]), #don't play
-              ]
+      Music: [4,0]
       Current_Level: 0
       Levels: [
               ( #start declartng level one
@@ -420,6 +415,7 @@ jQuery ->
                 ]
               )
               ]
+    #DNA_MUSIC.Load()
 
     #Color 1 -- RGB: 210, 194, 153 / HEX: D2C299
     #Color 2 -- RGB: 171, 149, 136 / HEX: AB9588
@@ -488,9 +484,17 @@ jQuery ->
 
       #play music
       if G.Tick % 15 == 0 and G.Music_Playing
-        for n in G.Music[G.Music_index]
-          PS.AudioPlay n
-        G.Music_index = (G.Music_index+1) % G.Music.length
+        last_note = G.Music
+        key = last_note[0]*12 + last_note[1]
+        go = 1
+        go = -1 if Math.random()*(last_note[0]-1) > Math.random()*(7-last_note[0])
+        note = (key - 12*Math.floor(key/12))
+        scale = [0-note,2-note,3-note,5-note,6-note,8-note,11-note,12-note]
+        key = key + (go * scale[Math.floor(Math.random()*scale.length)])
+        key = Math.max(9,Math.min(97,key))
+        key = [Math.floor(key/12),(key - 12*Math.floor(key/12))]
+        PS.AudioPlay DNA_MUSIC.Piano[key[0]][key[1]]
+        G.Music = key
       #change status
       if G.Tick % G.STATUS.CYCLE == 0
         G.STATUS.Current = (G.STATUS.Current+1) % G.STATUS.Values.length
