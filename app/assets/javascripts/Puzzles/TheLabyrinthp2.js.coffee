@@ -1,8 +1,9 @@
 ### oppen to puplic use ###
 jQuery ->
   if jQuery('#name').html() == 'TheLabyrinthp2'
-    #------------------------------------ Classes -------------------------------------
-    #the wall class makes the walls of the maze
+    ### START OF GAME CODE ###
+    ###------------------------------------ Classes -------------------------------------###
+    ###the wall class makes the walls of the maze###
     class wall
       constructor: (name,moveable,color,up_color) ->
         @name = name
@@ -12,13 +13,13 @@ jQuery ->
 
       draw: (x,y) ->
         PS.BeadColor x,y, @color
-    #this class keeps track of the player and if they can move
+    ###this class keeps track of the player and if they can move###
     class player
       constructor: () ->
         @loc =
           x: 0
           y: 0
-        #1,0 -> east, 0,1 - > sout, -1,0 -> west, 0,-1 -> north
+        ###1,0 -> east, 0,1 - > sout, -1,0 -> west, 0,-1 -> north###
         @facing =
           x: 0
           y: 1
@@ -35,13 +36,13 @@ jQuery ->
         if @wall >= 0
           w = G.Walls[@wall]  #grab the wall
           PS.BeadColor @loc.x+@facing.x, @loc.y+@facing.y, w.up_color #draw the wall
-      #this will move the player or rotate checking for collisions
+      ###this will move the player or rotate checking for collisions###
       move: (delta_x,delta_y) ->
         @moved = true
         if @wall >= 0 #we have to tak into acount the wall
-          # #check to see if we are facing that way
+          ### #check to see if we are facing that way###
           if @facing.x == delta_x and @facing.y == delta_y
-            #check to see if we can move
+            ###check to see if we can move###
             if @loc.x+2*delta_x >= G.BOARD.X_min and @loc.x+2*delta_x <= G.BOARD.X_max and @loc.y+2*delta_y >= G.BOARD.Y_min and @loc.y+2*delta_y <= G.BOARD.Y_max
               d1 = PS.BeadData @loc.x+delta_x,@loc.y+delta_y
               d2 = PS.BeadData @loc.x+(2*delta_x),@loc.y+(2*delta_y)
@@ -53,7 +54,7 @@ jQuery ->
             else #we ran into a wall
               PS.AudioPlay G.AUDIO.RUN_INTO_WALL
           else if Math.abs(@facing.x) == Math.abs(delta_x) and Math.abs(@facing.y) == Math.abs(delta_y) #we are facing in 180
-            #how to pull a block backwards
+            ###how to pull a block backwards###
             if @loc.x+delta_x >= G.BOARD.X_min and @loc.x+delta_x <= G.BOARD.X_max and @loc.y+delta_y >= G.BOARD.Y_min and @loc.y+delta_y <= G.BOARD.Y_max
               d = PS.BeadData @loc.x+delta_x,@loc.y+delta_y
               if d < 0 #there is no wall and we can move
@@ -71,9 +72,9 @@ jQuery ->
             else #we ran into a wall
               PS.AudioPlay G.AUDIO.RUN_INTO_WALL
         else #we don't have a wall
-          #check to see if we are facing that way
+          ###check to see if we are facing that way###
           if @facing.x == delta_x and @facing.y == delta_y
-            #we are facing that way now check to see if we can move
+            ###we are facing that way now check to see if we can move###
             if @loc.x+delta_x >= G.BOARD.X_min and @loc.x+delta_x <= G.BOARD.X_max and @loc.y+delta_y >= G.BOARD.Y_min and @loc.y+delta_y <= G.BOARD.Y_max
               d = PS.BeadData @loc.x+delta_x,@loc.y+delta_y
               if d < 0 #there is no wall and we can move
@@ -82,7 +83,7 @@ jQuery ->
               else #we ran into a wall
                 PS.AudioPlay G.AUDIO.RUN_INTO_WALL
             else if @loc.x+delta_x >= G.BOARD.X_min-1 and @loc.x+delta_x <= G.BOARD.X_max+1 and @loc.y+delta_y >= G.BOARD.Y_min and @loc.y+delta_y <= G.BOARD.Y_max
-              #play win sound if we mad it to the end
+              ###play win sound if we mad it to the end###
               if @loc.x <= G.BOARD.X_max and @loc.x+delta_x > G.BOARD.X_max
                 PS.AudioPlay G.AUDIO.WIN
               @loc.x += delta_x
@@ -92,17 +93,17 @@ jQuery ->
           else #we are not facing that direction so rotate
             @facing.x = delta_x
             @facing.y = delta_y
-      #allows the player to pick up moveable blocks and put them down again
+      ###allows the player to pick up moveable blocks and put them down again###
       pick_up_put_dow: () ->
         if @wall >= 0 #we have to put this one down
           PS.BeadData @loc.x+@facing.x,@loc.y+@facing.y, @wall
           @wall = -1
           PS.AudioPlay G.AUDIO.PUT_DOWN
         else
-          #we need to pick up
-          #check to se if our focus is in the game board
+          ###we need to pick up###
+          ###check to se if our focus is in the game board###
           if @loc.x+@facing.x >= G.BOARD.X_min and @loc.x+@facing.x <= G.BOARD.X_max and @loc.y+@facing.y >= G.BOARD.Y_min and @loc.y+@facing.y <= G.BOARD.Y_max
-            #check to see if there is a wall
+            ###check to see if there is a wall###
             d = PS.BeadData @loc.x+@facing.x,@loc.y+@facing.y
             if d >= 0
               if G.Walls[d].moveable #there is a wall
@@ -113,17 +114,17 @@ jQuery ->
                 PS.AudioPlay G.AUDIO.CANT_PICK_UP
 
 
-    #this class handles wall that will shift in the night time
+    ###this class handles wall that will shift in the night time###
     class shift_rule
-    #expected format is an aray [center,north,north east...north west] for each left and right the sound is what will get played when this rull happens
+      ###expected format is an aray [center,north,north east...north west] for each left and right the sound is what will get played when this rull happens###
       constructor: (left,right,sound) ->
         @left = left
         @right = right
         @sound = sound
 
-      #implements the rule if it is aplicable
+      ###implements the rule if it is aplicable###
       implemnt: (x,y) ->
-        #check if the left cent is valid
+        ###check if the left cent is valid###
         center_data = PS.BeadData x,y
         if center_data == @left[0]
           can_look_north = y > G.BOARD.Y_min
@@ -131,51 +132,51 @@ jQuery ->
           can_look_east = x < G.BOARD.X_max
           can_look_west = x > G.BOARD.X_min
 
-          #now check if the rest of the directions are valid
+          ###now check if the rest of the directions are valid###
           valid = true
           if can_look_north
             valid = valid and @left[1] == PS.BeadData(x,y-1)
           else
             valid = valid and(@left[1] == -1 and @right[1] ==[-1])
-          #north east
+          ###north east###
           if can_look_north and can_look_east
             valid = valid and @left[2] == PS.BeadData(x+1,y-1)
           else
             valid = valid and(@left[2] == -1 and @right[2] ==[-1])
-          #east
+          ###east###
           if can_look_east
             valid = valid and @left[3] == PS.BeadData(x+1,y)
           else
             valid = valid and(@left[3] == -1 and @right[3] ==[-1])
-          #south east
+          ###south east###
           if can_look_south and can_look_east
             valid = valid and @left[4] == PS.BeadData(x+1,y+1)
           else
             valid = valid and(@left[4] == -1 and @right[4] ==[-1])
-          #south
+          ###south###
           if can_look_south
             valid = valid and @left[5] == PS.BeadData(x+0,y+1)
           else
             valid = valid and(@left[5] == -1 and @right[5] ==[-1])
-          #south west
+          ###south west###
           if can_look_south and can_look_west
             valid = valid and @left[6] == PS.BeadData(x-1,y+1)
           else
             valid = valid and(@left[6] == -1 and @right[6] ==[-1])
-          #west
+          ###west###
           if can_look_west
             valid = valid and @left[7] == PS.BeadData(x-1,y)
           else
             valid = valid and(@left[7] == -1 and @right[7] ==[-1])
-          #north west
+          ###north west###
           if can_look_north and can_look_west
             valid = valid and @left[8] == PS.BeadData(x-1,y-1)
           else
             valid = valid and(@left[8] == -1 and @right[8] ==[-1])
 
           if valid
-            #alert 'ok'
-            #check if we colide with the player or his block
+            ###alert 'ok'###
+            ###check if we colide with the player or his block###
             player_x = G.Player.loc.x
             player_w = 0
             player_w += 1 if Math.abs(G.Player.facing.x) == 1 and G.Player.wall >= 0
@@ -184,14 +185,14 @@ jQuery ->
             player_h = 0
             player_h += 1 if  Math.abs(G.Player.facing.y) == 1 and G.Player.wall >= 0
             player_y -= 1 if G.Player.facing.y < 0
-            #see if that box is in the zone we are trying to implement
-            #alert ((player_x + player_w) + ' >= ' +  (x-1) + ' and ' + (player_x) + ' <= ' + (x+1)) + ' and ' + ((player_y+player_h) + ' >= ' + (y-1) + ' and ' + (player_y) <= (y+1))
+            ###see if that box is in the zone we are trying to implement###
+            ###alert ((player_x + player_w) + ' >= ' +  (x-1) + ' and ' + (player_x) + ' <= ' + (x+1)) + ' and ' + ((player_y+player_h) + ' >= ' + (y-1) + ' and ' + (player_y) <= (y+1))###
             if ((player_x + player_w) >= (x-1) and (player_x) <= (x+1)) and ((player_y+player_h) >= (y-1) and (player_y) <= (y+1))
-              #we may colid with the player
+              ###we may colid with the player###
               return false
             else #we will not colide with the player
               PS.AudioPlay @sound
-              #implement the rule
+              ###implement the rule###
               PS.BeadData x,y, @right[0]
               PS.BeadData x,y-1, @right[1] if can_look_north
               PS.BeadData x+1,y-1, @right[2] if can_look_north and can_look_east
@@ -203,7 +204,7 @@ jQuery ->
               PS.BeadData x-1,y-1, @right[8] if can_look_north and can_look_west
 
 
-    #------------------------------------ helper funtions -----------------------------
+    ###------------------------------------ helper funtions -----------------------------###
     draw_start_and_end_and_controls = () ->
       start_letters = ['S','T','A','R','T',' ']
       end_letters = ['E','N','D',' ']
@@ -222,27 +223,27 @@ jQuery ->
 
     load_level = () ->
       level = G.Levels[G.Current_Level]
-      #change the status
+      ###change the status###
       G.STATUS.Current = 0
       G.STATUS.Values = level.status
-      #change the grid size
+      ###change the grid size###
       G.BOARD.X_max = level.board[0].length
       G.BOARD.Y_max = level.board.length - 1
       G.GRID.Width = G.BOARD.X_max + 2
       G.GRID.Height = G.BOARD.Y_max + 2
-      #change the grid size
+      ###change the grid size###
       PS.GridSize G.GRID.Width, G.GRID.Height
-      #turn of flash and borders
+      ###turn of flash and borders###
       PS.BeadBorderWidth PS.ALL,PS.ALL, 0
       PS.BeadFlash PS.ALL,PS.ALL, false
-      #draw the zones
+      ###draw the zones###
       draw_start_and_end_and_controls()
-      #place the walls
+      ###place the walls###
       for y in [0..level.board.length-1]
         for x in [0..level.board[y].length-1]
           PS.BeadData x+1,y, level.board[y][x]
 
-      #reset the player
+      ###reset the player###
       G.Player = new player()
 
     shuffle = (list) ->
@@ -259,10 +260,10 @@ jQuery ->
     debug = (response) ->
       property_names = ""
       for propertyName of response
-        # propertyName is what you want
+        ### propertyName is what you want###
         property_names += propertyName + " = " + response[propertyName] + "\n"
       alert property_names
-    #------------------------------------------ Constants -----------------------------------------
+    ###------------------------------------------ Constants -----------------------------------------###
     movable = true
     not_movable = false
     f = -1
@@ -522,16 +523,16 @@ jQuery ->
                 ]
               )
               ]
-    #DNA_MUSIC.Load()
+    ###DNA_MUSIC.Load()###
 
-    #Color 1 -- RGB: 210, 194, 153 / HEX: D2C299
-    #Color 2 -- RGB: 171, 149, 136 / HEX: AB9588
-    #Color 3 -- RGB: 156, 117, 82 / HEX: 9C7552
-    #Color 4 -- RGB: 114, 93, 65 / HEX: 725D41
-    #Color 5 -- RGB: 133, 100, 78 / HEX: 85644E
-    #------------------------------------------ pre PS.init init --------------------------------------
+    ###Color 1 -- RGB: 210, 194, 153 / HEX: D2C299###
+    ###Color 2 -- RGB: 171, 149, 136 / HEX: AB9588###
+    ###Color 3 -- RGB: 156, 117, 82 / HEX: 9C7552###
+    ###Color 4 -- RGB: 114, 93, 65 / HEX: 725D41###
+    ###Color 5 -- RGB: 133, 100, 78 / HEX: 85644E###
+    ###------------------------------------------ pre PS.init init --------------------------------------###
 
-    #------------------------------------------ Events -----------------------------------------
+    ###------------------------------------------ Events -----------------------------------------###
 
     PS.Init = ->
       "use strict"
@@ -584,12 +585,12 @@ jQuery ->
 
     PS.Tick = ->
       "use strict"
-      #update tick counter
+      ###update tick counter###
       G.Tick += 1
       if G.Tick >= 3600
         G.Tick = 0
 
-      #play music
+      ###play music###
       if G.Tick % 15 == 0 and G.Music_Playing
         last_note = G.Music
         key = last_note[0]*12 + last_note[1]
@@ -608,37 +609,38 @@ jQuery ->
           PS.AudioStop(G.Music_queue[0])
           G.Music_queue.splice(0,1)
         G.Music = key
-      #change status
+      ###change status###
       if G.Tick % G.STATUS.CYCLE == 0
         G.STATUS.Current = (G.STATUS.Current+1) % G.STATUS.Values.length
         PS.StatusText G.STATUS.Values[G.STATUS.Current]
-      #update the screen if we have moved or the time is right
+      ###update the screen if we have moved or the time is right###
       if G.Player.moved or G.Tick % 10 == 0
-        #clear the screen
+        ###clear the screen###
         PS.BeadColor PS.ALL,PS.ALL, G.COLORS.GROUND
         PS.BeadGlyph PS.ALL,PS.ALL, ' '
-        #draw the zones again
+        ###draw the zones again###
         draw_start_and_end_and_controls()
-        #draw the walls
+        ###draw the walls###
         de = ''
         for x in [G.BOARD.X_min..G.BOARD.X_max]
           for y in [G.BOARD.Y_min..G.BOARD.Y_max]
-            #if we have rules implement them
+            ###if we have rules implement them###
             for r in [0..G.Levels[G.Current_Level].rules.length-1]
               if r >= 0  and r < G.Levels[G.Current_Level].rules.length
                 G.Levels[G.Current_Level].rules[r].implemnt(x,y)
-            #draw the walls
+            ###draw the walls###
 
             d = PS.BeadData x,y
             de = de + ', ' + d
             PS.BeadColor x,y, G.Walls[d].color if d >= 0 and d < G.Walls.length
-        #draw the player
+        ###draw the player###
         G.Player.draw()
-        #check for a victory
+        ###check for a victory###
         if G.Player.loc.x > G.BOARD.X_max
           G.Current_Level = (G.Current_Level + 1) % G.Levels.length
           load_level()
           PS.StatusText G.STATUS.Values[G.STATUS.Current]
+    ### END OF GAME CODE ###
 
 
 
