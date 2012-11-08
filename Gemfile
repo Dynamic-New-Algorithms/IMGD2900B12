@@ -9,6 +9,7 @@ gem 'haml'
 gem 'rdiscount'
 gem 'sass'
 gem 'jquery-rails'
+gem 'coffee-rails', '~> 3.2.1'
 
 # Gems used only for assets and not required
 # in production environments by default.
