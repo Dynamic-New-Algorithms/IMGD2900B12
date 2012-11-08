@@ -13,7 +13,7 @@ class ApplicationController < ActionController::Base
 
   def rorschach
     if params[:format] == 'js'
-      render :file => 'app/assets/javascripts/Toys/Rorschach.js'
+      render :file => 'app/assets/javascripts/Toys/Rorschach.js',:layout => false
     else
       render '/Toys/rorscharch.html.haml'
     end
