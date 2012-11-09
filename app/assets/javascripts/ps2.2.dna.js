@@ -30,7 +30,7 @@ var PS = {
 
     // Constants
 
-    VERSION: "2.2.3.dna",
+    VERSION: "2.2.4",
     ERROR: "ERROR", // generic error return value
     DEFAULT: "DEFAULT", // use default value
     CURRENT: "CURRENT", // use current value
@@ -54,7 +54,6 @@ var PS = {
     DEFAULT_BORDER_GREEN: 0x80,
     DEFAULT_BORDER_BLUE: 0x80,
     DEFAULT_BORDER_WIDTH: 1,
-    BORDER_WIDTH_MAX: 8,
     DEFAULT_GLYPH_COLOR: 0xFFFFFF,
     DEFAULT_GLYPH_RED: 0xFF,
     DEFAULT_GLYPH_GREEN: 0xFF,
@@ -71,6 +70,16 @@ var PS = {
     STATUS_FLASH_STEP: 5, // percent for each step
     FLASH_INTERVAL: 5, // number of ticks per flash step
     DEFAULT_TEXT_COLOR: 0x000000,
+
+    // sound	
+
+    DEFAULT_VOLUME: 1.0, // must be between 0 and 1.0
+    DEFAULT_LOOP: false,
+    AUDIO_PATH_DEFAULT: "http://users.wpi.edu/~bmoriarty/ps/audio/", // case sensitive!	
+    AUDIO_MAX_CHANNELS: 32,
+
+    AudioCurrentPath: "",
+    AudioChannels: [],
 
     // Color constants
 
@@ -129,6 +138,8 @@ var PS = {
     LastX: -1,
     LastY: -1,
 
+    OverCanvas: false, // true when mouse is over canvas
+
     // Delay and clock settings
 
     FlashDelay: 0,
@@ -144,36 +155,6 @@ var PS = {
     StatusBlue: 0,
     StatusPhase: 0, // 100: done fading
     StatusFading: true
-};
-
-// Sound system namespace
-
-var Sound = {
-
-    // constants
-
-    ERROR: "ERROR", // this value should be same as host error value
-    DEFAULT: "DEFAULT", // this value should be same as host default value
-
-    MODE_OFF: "SOUND::OFF",
-    MODE_ON: "SOUND::ON",
-
-    // channel states
-
-    EMPTY: "SOUND::EMPTY",
-    LOADING: "SOUND::LOADING",
-    READY: "SOUND::READY",
-    ACTIVE: "SOUND::ACTIVE",
-
-    DEFAULT_PATH: "http://users.wpi.edu/~bmoriarty/ps/audio/",
-    DEFAULT_VOLUME: 1.0,
-    MAX_CHANNELS: 32,
-
-    Mode: 0, // audio mode: 0 = off, 1 = on
-    Path: "http://users.wpi.edu/~bmoriarty/ps/audio/", // current audio path
-    Count: 0,
-    Channels: [],
-    Tracks: []
 };
 
 // Improved typeof that distinguishes arrays
@@ -699,7 +680,7 @@ PS.InitGrid = function (x, y)
     grid.borderBlue = PS.DEFAULT_BORDER_BLUE;
     grid.borderColor = PS.RGBString (grid.borderRed, grid.borderGreen, grid.borderBlue);
 
-    grid.borderMax = PS.BORDER_WIDTH_MAX; // for now; should be calculated
+    grid.borderMax = Math.floor((size - 8) / 2); // make sure 8x8 bead is visible inside border
 
     grid.pointing = -1;			// bead cursor is pointing at (-1 if none)
 
@@ -1491,9 +1472,9 @@ PS.BeadBorderWidth = function (x, y, width)
         {
             width = 0;
         }
-        else if ( width > PS.BORDER_WIDTH_MAX )
+        else if ( width > PS.Grid.borderMax )
         {
-            width = PS.BORDER_WIDTH_MAX;
+            width = PS.Grid.borderMax;
         }
     }
 
@@ -3117,6 +3098,7 @@ PS.MouseMove = function (event)
     "use strict";
     var bead, last;
 
+    PS.OverCanvas = true;
     PS.MouseXY(this, event);
 
     if ( PS.MouseX >= 0 )
@@ -3180,6 +3162,7 @@ PS.MouseOut = function (event)
     "use strict";
     var last;
 
+    PS.OverCanvas = false;
     PS.MouseBead = -1;
     if ( PS.Grid && PS.Leave ) // only if grid and function exist
     {
@@ -3386,6 +3369,12 @@ PS.SysWheel = function (event)
 {
     "use strict";
     var delta;
+
+    if ( !PS.OverCanvas )
+    {
+        event.returnValue = true;
+        return true;
+    }
 
     if ( PS.Wheel ) // only if function exists
     {
@@ -4132,768 +4121,275 @@ PS.ImageBlit = function ( imgdata, xpos, ypos )
     return true;
 };
 
-// Audio functions
+// Old audio system (for now)
 
-// Returns true if succeeded, else false
+// Audio functions
 
 PS.AudioInit = function ()
 {
     "use strict";
+    var fn, i, snd;
 
-    return Sound.Init();
-};
-
-// Sets/returns current audio path, PS.ERROR on error
-
-PS.AudioPath = function (p)
-{
-    "use strict";
-
-    return Sound.SetPath(p);
-};
-
-// Load sound [id] with optional path [p]
-// Returns 1-based channel number
-
-PS.AudioLoad = function (id, p)
-{
-    "use strict";
-    var options;
-
-    if ( p !== undefined )
-    {
-        options = { path: p };
-    }
-    else
-    {
-        options = undefined;
-    }
-
-    return Sound.Load ( id, options );
-};
-
-// Play sound [id] with optional volume [vol], onstop function [func], path [p]
-// Returns 1-based channel number, PS.ERROR on error
-
-PS.AudioPlay = function (id, vol, func, p)
-{
-    "use strict";
-    var options;
-
-    if ( vol !== undefined )
-    {
-        options = { volume: vol };
-        if ( func !== undefined )
-        {
-            options.onstop = func;
-        }
-        if ( p !== undefined )
-        {
-            options.path = p;
-        }
-    }
-    else
-    {
-        options = undefined;
-    }
-
-    return Sound.Play( id, options );
-};
-
-// Stops playback of 1-based channel number [c]
-// Returns channel number, PS.ERROR on error
-
-PS.AudioStop = function (c)
-{
-    "use strict";
-
-    return Sound.Stop( c );
-};
-
-// Pauses/unpauses playback of 1-based channel number [c]
-// Returns channel number, PS.ERROR on error
-
-PS.AudioPause = function (c)
-{
-    "use strict";
-
-    return Sound.Pause( c );
-};
-
-// Sound system 2.0
-
-// Option parameters
-// path: string (path specifier; default = Sound.Path)
-// now: boolean (play immediately; default = false)
-// loop: boolean (loop on playback; default = false)
-// keep: boolean (do not unload; default = false)
-// volume: float (initial volume; default = Sound.DEFAULT_VOLUME)
-// start: int (where to start playback; default = 0)
-// until: int (where to end playback; default = end)
-// track: string (track assignment for queueing; default = Sound.DEFAULT)
-// onstart: string (name of a function in G namespace to run when sound starts)
-// onstop: string (name of a function in G namespace to run when sound stops)
-
-// Modify this function to invoke host application's error string handler
-
-Sound.Error = function (str)
-{
-    "use strict";
-
-    PS.Oops(str);
-    return Sound.ERROR;
-};
-
-// Returns true if init was successful, else false
-
-Sound.Init = function ()
-{
-    "use strict";
-    var i;
+    fn = "[PS.AudioInit] ";
 
     if ( !document.createElement("audio").canPlayType )
     {
-        Sound.Mode = Sound.MODE_OFF;
-        document.alert("HTML5 audio not supported by this browser");
+        PS.Oops(fn + "HTML5 audio not supported");
         return false;
     }
 
-    Sound.Mode = Sound.MODE_ON;
+    PS.AudioCurrentPath = PS.AUDIO_PATH_DEFAULT;
 
-    // set up empty channels
-
-    for ( i = 0; i < Sound.MAX_CHANNELS; i += 1 )
+    PS.AudioChannels.length = PS.AUDIO_MAX_CHANNELS;
+    for ( i = 0; i < PS.AUDIO_MAX_CHANNELS; i += 1 )
     {
-        Sound.Channels[i] = {
-            name: "",
-            track: "",
-            now: false,
-            keep: false,
-            status: Sound.EMPTY,
-            duration: 0,
-            onstart: null,
-            onstop: null,
-            snd: new Audio()
-        };
+        snd = new Audio();
+        PS.AudioChannels[i] = { id: "", done: -1, audio: snd };
     }
-
-    // set up default track
-
-    Sound.Tracks.push( { name: Sound.DEFAULT, queue: [] } );
-
     return true;
 };
 
-// Sets/returns new default path, else ERROR
+PS.AudioError = function (obj)
+{
+    "use strict";
+    var c, str;
 
-Sound.SetPath = function (path)
+    c = obj.error.code;
+    switch ( c )
+    {
+        case 1:
+            str = "MEDIA_ERR_ABORTED";
+            break;
+        case 2:
+            str = "MEDIA_ERR_NETWORK";
+            break;
+        case 3:
+            str = "MEDIA_ERR_DECODE";
+            break;
+        case 4:
+            str = "MEDIA_ERR_SRC_NOT_SUPPORTED";
+            break;
+        default:
+            str = "UNKNOWN";
+            break;
+    }
+
+    PS.Oops("[Audio Error: " + str + "]\n");
+};
+
+PS.AudioPath = function (path)
 {
     "use strict";
     var fn;
 
-    fn = "[Sound.SetPath] ";
+    fn = "[PS.AudioPath] ";
 
-    if ( path === Sound.DEFAULT )
+    if ( path === PS.DEFAULT )
     {
-        path = Sound.Path = Sound.DEFAULT_PATH;
+        PS.AudioCurrentPath = path = PS.AUDIO_PATH_DEFAULT;
     }
     else if ( (typeof path !== "string") || (path.length < 1) )
     {
-        path = Sound.Error (fn + "path parameter not a valid string");
+        path = PS.Oops(fn + "path parameter is not a valid string");
     }
     else
     {
-        Sound.Path = path;
+        PS.AudioCurrentPath = path;
     }
 
     return path;
 };
 
-// Returns complete path of a sound file
-// Also verifies option parameters
-
-Sound.GetPath = function (id, options)
+PS.AudioLoad = function (id, path)
 {
     "use strict";
-    var fn, path, param, len, i, found;
+    var fn, snd;
 
-    fn = "[Sound.GetPath] ";
+    fn = "[PS.AudioLoad] ";
 
     if ( (typeof id !== "string") || (id.length < 1) )
     {
-        return Sound.Error(fn + "Invalid id");
+        return PS.Oops(fn + "id parameter is not a valid string");
     }
 
-    path = Sound.Path; // default to current path
-
-    if ( options )
+    if ( path === undefined )
     {
-        if ( options.path ) // if path is specified
-        {
-            path = Sound.SetPath(options.path);
-            if ( path === Sound.ERROR )
-            {
-                return path;
-            }
-        }
-
-        if ( options.volume )
-        {
-            param = options.volume;
-            if ( typeof param !== "number" )
-            {
-                return Sound.Error(fn + "Invalid volume param");
-            }
-
-            if ( param > 1.0 ) // clamp
-            {
-                options.volume = 1.0;
-            }
-            else if ( param < 0 ) // clamp
-            {
-                options.volume = 0;
-            }
-        }
-
-        if ( options.track )
-        {
-            param = options.track;
-            if ( (typeof param !== "string") || (param.length < 1) )
-            {
-                return Sound.Error(fn + "Invalid track param");
-            }
-
-            // make sure track exists
-
-            found = false;
-            len = Sound.Tracks.length;
-            for ( i = 0; i < len; i += 1 )
-            {
-                if ( Sound.Tracks[i].name === param )
-                {
-                    found = true;
-                    break;
-                }
-            }
-            if ( !found )
-            {
-                return Sound.Error(fn + "Missing track");
-            }
-        }
-
-        if ( options.onstart && (typeof options.onstart !== "function") )
-        {
-            return Sound.Error(fn + "Invalid onstart function");
-        }
-
-        if ( options.onstop && (typeof options.onstop !== "function") )
-        {
-            return Sound.Error(fn + "Invalid onstop function");
-        }
+        path = PS.AudioCurrentPath;
+    }
+    else if ( path === PS.DEFAULT )
+    {
+        path = PS.AUDIO_PATH_DEFAULT;
+    }
+    else if ( (typeof path !== "string") || (path.length < 1) )
+    {
+        return PS.Oops(fn + "path parameter is not a valid string");
     }
 
-    return path + id;
+    // Already got this? Clone it
+
+    snd = document.getElementById(id);
+    if ( snd )
+    {
+        return snd;
+    }
+
+    path = path + id + ".wav";
+
+    snd = document.createElement("audio");
+    if ( !snd )
+    {
+        return PS.Oops(fn + "audio element init failed");
+    }
+    snd.setAttribute("src", path);
+    snd.setAttribute("id", id);
+    snd.setAttribute("preload", "auto");
+    snd.setAttribute("onerror", "PS.AudioError(this)");
+
+//	src = document.createElement("source");
+//	src.setAttribute("src", path + ".ogg");
+//	src.setAttribute("type", "audio/ogg");
+//	snd.appendChild(src);
+
+//	src = document.createElement("source");
+//	src.setAttribute("src", path + ".mp3");
+//	src.setAttribute("type", "audio/mpeg");
+//	src.setAttribute("onerror", "PS.AudioError()");
+//	snd.appendChild(src);
+
+//	src = document.createElement("source");
+//	src.setAttribute("src", path + ".wav");
+//	src.setAttribute("type", "audio/x-wav");
+//	snd.appendChild(src);
+
+    document.body.appendChild(snd);
+    snd.load();
+
+    return snd;
 };
 
-Sound.LoadPath = function (path, options)
+// Returns a channel number
+
+PS.AudioPlay = function (id, volume, func, path)
 {
     "use strict";
-    var fn, e, s, i, c, channel, func;
+    var fn, i, snd, d, t, channel;
 
-    fn = "[Sound.LoadPath] ";
+    fn = "[PS.AudioPlay] ";
 
-//	PS.Debug("Create " + path + " element\n");
-
-    e = document.createElement("audio");
-    if ( !e )
+    if ( (volume === undefined) || (volume === PS.DEFAULT) )
     {
-        return Sound.Error(fn + "Invalid <audio> element");
+        volume = PS.DEFAULT_VOLUME;
     }
-    e.id = "snd" + Sound.Count;
-    Sound.Count += 1;
-
-    e.preload = "auto";
-
-    // add error handler
-
-    e.addEventListener("error", function (evt)
+    else
     {
-        var str;
-
-        switch ( evt.error.code )
+        if ( typeof volume !== "number" )
         {
-            case 1:
-                str = "MEDIA_ERR_ABORTED";
-                break;
-            case 2:
-                str = "MEDIA_ERR_NETWORK";
-                break;
-            case 3:
-                str = "MEDIA_ERR_DECODE";
-                break;
-            case 4:
-                str = "MEDIA_ERR_SRC_NOT_SUPPORTED";
-                break;
-            default:
-                str = "UNKNOWN";
-                break;
+            return PS.Oops(fn + "volume parameter is not a number");
         }
-        return Sound.Error(fn + path + " [" + str + "]");
-    });
-
-    // assign a channel
-
-    channel = 0;
-    for ( i = 0; i < Sound.MAX_CHANNELS; i += 1 )
-    {
-        c = Sound.Channels[i];
-        if ( c.name.length < 1 ) // unassigned?
+        if ( volume < 0 )
         {
-            channel = i + 1;
-            c.name = path;
-            c.status = Sound.LOADING;
-            c.snd = e;
-            c.snd.volume = Sound.DEFAULT_VOLUME; // default			
-            c.keep = false; // default	
-            c.now = false; // default	
-            c.track = ""; // default;
-            c.duration = 0;
-            c.onstart = null;
-            c.onstop = null;
-            if ( options )
-            {
-                if ( options.keep )
-                {
-                    c.keep = true;
-                }
-                if ( options.loop )
-                {
-                    c.snd.loop = true;
-                }
-                if ( options.volume )
-                {
-                    c.snd.volume = options.volume;
-                }
-                if ( options.track ) // if track specified, add sound to queue
-                {
-                    c.track = options.track;
-                    Sound.AddQueue(options.track, i);
-                }
-                if ( options.now )
-                {
-                    c.now = true;
-                }
-                if ( options.onstart )
-                {
-                    c.onstart = options.onstart;
-                }
-                if ( options.onstop )
-                {
-                    c.onstop = options.onstop;
-                }
-            }
-
-//			L.Debug("Assigned " + path + " ch " + i + "\n");
-            break;
+            volume = 0;
+        }
+        else if ( volume > PS.DEFAULT_VOLUME )
+        {
+            volume = PS.DEFAULT_VOLUME;
         }
     }
 
-    if ( !channel )
+    if ( (func !== undefined) && (typeof func !== "function") )
     {
-        return Sound.Error(fn + "No channel available for " + path);
+        return PS.Oops(fn + "func parameter is not a function");
     }
 
-    e.setAttribute("data-channel", channel); // remember the channel
-
-    // add load and ended handlers
-
-    e.addEventListener("loadeddata", function (evt)
+    snd = PS.AudioLoad(id, path);
+    if ( snd !== PS.ERROR )
     {
-        var j, ch, d, ff, step;
-
-        j = parseInt(this.getAttribute("data-channel"), 10) - 1; // get the actual channel index
-        ch = Sound.Channels[j];
-
-//		L.Debug("Loaded " + ch.name + " ch " + i + "\n");
-
-        if ( ch.now ) // play immediately if specified
+        snd.volume = volume;
+        if ( func !== undefined )
         {
-            Sound.StartChannel(j);
+            snd.addEventListener("ended", func);
         }
-        else // or indicate on-standby
+        for ( i = 0; i < PS.AUDIO_MAX_CHANNELS; i += 1 )
         {
-            ch.status = Sound.READY;
-        }
-    });
-
-    e.addEventListener("ended", function (evt)
-    {
-        var j, ch;
-
-        j = parseInt(this.getAttribute("data-channel"), 10) - 1; // get the actual channel index
-        ch = Sound.Channels[j];
-
-        // if channel has an onstop function, call it
-
-        if ( ch.onstop )
-        {
-            try
+            d = new Date();
+            t = d.getTime();
+            channel = PS.AudioChannels[i];
+            if ( channel.done < t )
             {
-                ch.onstop(j + 1); // call with 1-based channel number
-            }
-            catch (err)
-            {
-                Sound.Error(".onstop function failed [" + err.message + "]" );
-            }
-        }
-
-        if ( !this.loop ) // only change non-looping channels
-        {
-            if ( !ch.keep ) // discard channel if transient
-            {
-//				PS.Debug("Discard " + ch.name + " ch " + j + "\n");
-                this.parentNode.removeChild(this);
-                ch.keep = false;
-                ch.now = false;
-                ch.status = Sound.EMPTY;
-                ch.duration = 0;
-                ch.name = ""; // mark channel as available
-                ch.onstart = null;
-                ch.onstop = null;
-            }
-            else // mark channel as ended
-            {
-//				PS.Debug("End " + ch.name + " ch " + j + "\n");
-                ch.status = Sound.READY;
-            }
-            if ( ch.track ) // start next sound in queue
-            {
-                Sound.NextQueue(ch.track, j);
-                ch.track = "";
-            }
-        }
-    });
-
-    s = document.createElement("source");
-    s.src = path + ".wav";
-    s.type = "audio/x-wav";
-    e.appendChild(s);
-
-//	s = document.createElement("source");
-//	s.src = path + ".opus";
-//	s.type = "audio/opus";
-//	e.appendChild(s);
-
-    s = document.createElement("source");
-    s.src = path + ".ogg";
-    s.type = "audio/ogg";
-    e.appendChild(s);
-
-    s = document.createElement("source");
-    s.src = path + ".mp3";
-    s.type = "audio/mpeg";
-    e.appendChild(s);
-
-    document.body.appendChild(e); // must be done to insure 'ended' is called
-
-    return channel;
-};
-
-// Load from a simple id & options
-
-Sound.Load = function (id, options)
-{
-    "use strict";
-    var path;
-
-    path = Sound.GetPath(id, options);
-    if ( path === Sound.ERROR )
-    {
-        return Sound.ERROR;
-    }
-    return Sound.LoadPath(path, options);
-};
-
-Sound.Play = function (id, options)
-{
-    "use strict";
-    var fn, path, i, c, func;
-
-    fn = "[Sound.Play] ";
-
-    path = Sound.GetPath(id, options);
-    if ( path === Sound.ERROR )
-    {
-        return path;
-    }
-
-    // play sound if already available and not playing
-
-    for ( i = 0; i < Sound.MAX_CHANNELS; i += 1 )
-    {
-        c = Sound.Channels[i];
-        if ( c.name === path )
-        {
-            if ( c.status === Sound.READY )
-            {
-//				PS.Debug("Replay " + id + " channel " + i + "\n");
-                if ( options )
-                {
-                    if ( options.volume )
-                    {
-                        c.snd.volume = options.volume;
-                    }
-                }
-                Sound.StartChannel(i);
+                channel.done = t + ( snd.duration * 1000 );
+                channel.audio = snd;
+                channel.id = id;
+                snd.load(); // WHY??? WHY???
+                snd.play();
                 return i + 1; // channel id
             }
         }
     }
 
-//	PS.Debug("Load/play " + id + "\n");
-
-    if ( !options )
-    {
-        options = {};
-    }
-    options.now = true;
-    return Sound.LoadPath(path, options); // load with immediate playback
+    return PS.ERROR;
 };
 
-// Stop a channel
-// Assumes a 1-based channel id
+// Stops playback of channel number
 
-Sound.Stop = function (channel)
+PS.AudioStop = function (c)
 {
     "use strict";
-    var fn, ch;
+    var fn, d, t, channel;
 
-    fn = "[Sound.Stop] ";
+    fn = "[PS.AudioStop] ";
 
-    if ( typeof channel !== "number" )
+    if ( typeof c !== "number" )
     {
-        return Sound.Error(fn + "Invalid channel id" );
+        return PS.Oops(fn + "Parameter is not a number");
+    }
+    c = Math.floor(c);
+    if ( (c < 1) || (c > PS.AUDIO_MAX_CHANNELS) )
+    {
+        return PS.Oops(fn + "Invalid channel id");
     }
 
-    channel = Math.floor(channel);
-    if ( (channel < 1) || (channel > Sound.MAX_CHANNELS) )
-    {
-        return Sound.Error(fn + "Channel id out of range" );
-    }
+    channel = PS.AudioChannels[c - 1];
+    d = new Date();
+    t = d.getTime();
 
-    ch = Sound.Channels[channel - 1];
-    ch.status = Sound.READY;
-    ch.snd.pause();
+    channel.done = t; // mark as done playing
+    channel.audio.pause();
+    channel.audio.currentTime = 0;
 
-    return channel;
+    return c;
 };
 
-// Pause/Unpause a channel
-// Assumes a 1-based channel id
+// Pauses/unpauses playback of channel number
 
-Sound.Pause = function (channel)
+PS.AudioPause = function (c)
 {
     "use strict";
-    var fn, ch;
+    var fn, channel, audio;
 
-    fn = "[Sound.Pause] ";
+    fn = "[PS.AudioPause] ";
 
-    if ( typeof channel !== "number" )
+    if ( typeof c !== "number" )
     {
-        return Sound.Error(fn + "Invalid channel id" );
+        return PS.Oops(fn + "Parameter is not a number");
+    }
+    c = Math.floor(c);
+    if ( (c < 1) || (c > PS.AUDIO_MAX_CHANNELS) )
+    {
+        return PS.Oops(fn + "Invalid channel id");
     }
 
-    channel = Math.floor(channel);
-    if ( (channel < 1) || (channel > Sound.MAX_CHANNELS) )
+    channel = PS.AudioChannels[c - 1];
+    audio = channel.audio;
+    if ( audio.paused )
     {
-        return Sound.Error(fn + "Channel id out of range" );
-    }
-
-    ch = Sound.Channels[channel - 1];
-
-    if ( ch.snd.paused )
-    {
-        ch.status = Sound.ACTIVE;
-        ch.snd.play();
+        audio.play();
     }
     else
     {
-        ch.status = Sound.READY;
-        ch.snd.pause();
+        audio.pause();
     }
 
-    return channel;
-};
-
-// Start a loaded sound channel
-// Assumes a verified zero-based channel index!
-
-Sound.StartChannel = function (channel)
-{
-    "use strict";
-    var ch, func;
-
-    ch = Sound.Channels[channel];
-
-    // if channel has onstart function, call it
-
-    if ( ch.onstart )
-    {
-        try
-        {
-            ch.onstart(channel + 1); // call with channel number
-        }
-        catch (err)
-        {
-            Sound.Error(".onstart function failed [" + err.message + "]" );
-        }
-    }
-
-    ch.now = false; // needed?	
-    ch.status = Sound.ACTIVE;
-    ch.snd.play();
-};
-
-
-// Create a new track
-
-Sound.AddTrack = function (track)
-{
-    "use strict";
-    var fn, len, i, t;
-
-    fn = "[Sound.AddTrack] ";
-
-    if ( (typeof track !== "string") || (track.length < 1) )
-    {
-        return Sound.Error(fn + "Invalid track param");
-    }
-
-    // make sure track isn't already defined
-
-    len = Sound.Tracks.length;
-    for ( i = 0; i < len; i += 1 )
-    {
-        t = Sound.Tracks[i];
-        if ( t.name === track )
-        {
-            return Sound.Error(fn + "Track '" + track + "' already defined");
-        }
-    }
-
-    // create the track
-
-    Sound.Tracks.push( { name: track, queue: [] } );
-    return true;
-};
-
-// Add a channel to a track queue
-
-Sound.AddQueue = function (track, channel)
-{
-    "use strict";
-    var fn, len, i, t, q;
-
-    fn = "[Sound.AddQueue] ";
-
-    len = Sound.Tracks.length;
-    for ( i = 0; i < len; i += 1 )
-    {
-        t = Sound.Tracks[i];
-        if ( t.name === track )
-        {
-//			PS.Debug("Adding ch " + channel + " to track " + track + "\n");
-            q = t.queue;
-            q.push(channel);
-            if ( q.length === 1 ) // if first in queue, play immediately
-            {
-                Sound.Channels[channel].now = true;
-            }
-        }
-    }
-};
-
-// Play next sound in track after [channel]
-
-Sound.NextQueue = function (track, channel)
-{
-    "use strict";
-    var fn, len, i, t, q, qlen, j, xch, nxt, c;
-
-    fn = "[Sound.NextQueue] ";
-
-//	PS.Debug(fn + "track " + track + " ch " + channel + "\n");
-
-    len = Sound.Tracks.length;
-    for ( i = 0; i < len; i += 1 )
-    {
-        t = Sound.Tracks[i];
-        if ( t.name === track )
-        {
-            // find this channel in queue
-
-            q = t.queue;
-            qlen = q.length;
-            j = 0;
-            while ( j < qlen )
-            {
-                xch = q[j];
-                if ( xch === channel ) // found it!
-                {
-                    q.splice(j, 1); // remove sound from queue					
-                    if ( qlen > 1 ) // was this the last sound in queue?
-                    {
-                        nxt = q[j]; // get next sound in queue
-                        c = Sound.Channels[nxt];
-//						PS.Debug("Starting " + c.name + " ch " + nxt + "\n");
-                        if ( c.status === Sound.READY )
-                        {
-                            Sound.StartChannel(nxt);
-                        }
-                        else
-                        {
-                            c.now = true; // play when loaded
-                        }
-                    }
-                    return true;
-                }
-                j += 1;
-            }
-        }
-    }
-
-    return Sound.Error(fn + "Missing track " + track + " ch " + channel);
-};
-
-// Queue a sound
-
-Sound.Queue = function (id, options)
-{
-    "use strict";
-    var fn, path;
-
-    fn = "[Sound.Queue] ";
-
-//	PS.Debug("Queueing " + id + "\n");	
-
-    path = Sound.GetPath(id, options);
-    if ( path === Sound.ERROR )
-    {
-        return Sound.ERROR;
-    }
-
-    // if track not specified, use default
-
-    if ( !options )
-    {
-        options = { track: Sound.DEFAULT };
-    }
-    else if ( !options.track )
-    {
-        options.track = Sound.DEFAULT;
-    }
-
-    return Sound.LoadPath(path, options);
+    return c;
 };
 
 // requestAnimationFrame polyfill by Erik MÃ¶ller
