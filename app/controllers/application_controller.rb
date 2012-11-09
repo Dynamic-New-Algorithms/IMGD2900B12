@@ -77,4 +77,12 @@ class ApplicationController < ActionController::Base
       render '/Puzzles/TheLabyrinthp' + params[:patch] + '.html.haml'
     end
   end
+  def wordwars
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/Games/WordWars.' + params[:patch] + '.js'
+    else
+      @patch = params[:patch]
+      render '/Games/WordWars.html.haml'
+    end
+  end
 end
