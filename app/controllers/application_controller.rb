@@ -85,4 +85,10 @@ class ApplicationController < ActionController::Base
       render '/Games/WordWars.html.haml'
     end
   end
+  def dictionary
+    render '/Games/dict.txt',:layout => false
+  end
+  def word_wars_ai_script
+    render '/Games/' + params[:script] + '.txt',:layout => false
+  end
 end

@@ -24,18 +24,25 @@ jQuery ->
           i = 0
           while Alphabet[1][i] != value
             i += 1
+            if i > Alphabet[1].length
+              i = -1
+              break
           @number = i
 
-        @glyph = '!'
+        @glyph = value
         if @vowel
           @glyph = Alphabet[0][@number]
-        else
+        else if @number > 0
           @glyph = Alphabet[1][@number]
 
         @major = [0,2,4,5,7,9,11]
         @minor = [0,2,3,5,7,8,10]
       ### combat pits this letter (as you) against the incoming ###
       combat: (other) ->
+        if other.number < 0
+          return 'win'
+        else if @number < 0
+          return 'lose'
         ### if we are a vowel we should beat all none vowels ###
         if @vowel
           if other.vowel
@@ -203,119 +210,143 @@ jQuery ->
         @player = ''
         @direction = -1
         @history = []
+        @has_moved = false
       get_word: () ->
-        w = ''
-        for l in @letters
-          w += l.glyph
-        return w
-      draw: (index)->
-        if @history.length == 0
-          @history = []
+        w = 'EMPTY'
+        if @letters.length > 0
+          w = ''
           for l in @letters
-            @history.push({x: @head.x,y:@head.y})
-        if @player == 'player'
+            w += l.glyph
+        return w
+      kill_first: () ->
+        @has_moved = true
+        @letters.splice(0,1)
+        @history.splice(0,1)
+        if @history.length > 0
+          @head.x = @history[0].x
+          @head.y = @history[0].y
+      draw: (index)->
+        if @letters.length > 0
+          if @history.length == 0
+            @history = []
+            for l in @letters
+              @history.push({x: @head.x,y:@head.y})
           for loc in [(@letters.length-1)..0]
             PS.BeadData @history[loc].x,@history[loc].y,index+1
-            PS.BeadColor @history[loc].x,@history[loc].y, G.COLORS.PLAYER.WORD.BG
-            PS.BeadGlyphColor @history[loc].x,@history[loc].y, G.COLORS.PLAYER.WORD.GLYPH
+            PS.BeadColor @history[loc].x,@history[loc].y, G.COLORS.PLAYER.WORD.BG   if @player == 'player'
+            PS.BeadColor @history[loc].x,@history[loc].y, G.COLORS.COMP.WORD.BG  if @player == 'comp'
+            PS.BeadGlyphColor @history[loc].x,@history[loc].y, G.COLORS.PLAYER.WORD.GLYPH   if @player == 'player'
+            PS.BeadGlyphColor @history[loc].x,@history[loc].y, G.COLORS.COMP.WORD.GLYPH  if @player == 'comp'
             PS.BeadGlyph @history[loc].x,@history[loc].y,@letters[loc].glyph
-        else if @player == 'comp'
-          for loc in [(@letters.length-1)..0]
-            PS.BeadData @history[loc].x,@history[loc].y,index+1
-            PS.BeadColor @history[loc].x,@history[loc].y, G.COLORS.COMP.WORD.BG
-            PS.BeadGlyphColor @history[loc].x,@history[loc].y, G.COLORS.COMP.WORD.GLYPH
-            PS.BeadGlyph @history[loc].x,@history[loc].y,@letters[loc].glyph
-
+      update_history: () ->
+        if @history.length > 1
+          for h in [@history.length-1..1]
+            @history[h] = @history[h-1]
+        @history[0] = {x: @head.x, y: @head.y}
+      word_fight: (their_index) ->
+        my_l = @letters[0]
+        their_l = Game.Words[their_index].letters[0]
+        r = my_l.combat(their_l)
+        PS.Debug "    #{my_l.glyph} with combat #{their_l.glyph} and #{r}\n"
+        if r == 'tie'
+          PS.BeadFlashColor @head.x,@head.y,0xffffff
+          PS.BeadFlash @head.x,@head.y
+          this.kill_first()
+          Game.Words[their_index].has_moved = true
+          Game.Words[their_index].kill_first()
+        else if r == 'lose'
+          PS.BeadFlashColor @head.x,@head.y,G.COLORS.COMP.FLASH
+          PS.BeadFlash @head.x,@head.y
+          this.kill_first()
+        else if r == 'win'
+          PS.BeadFlashColor Game.Words[their_index].head.x,Game.Words[their_index].head.y,G.COLORS.PLAYER.FLASH
+          PS.BeadFlash @head.x,@head.y
+          Game.Words[their_index].has_moved = true
+          Game.Words[their_index].kill_first()
+        PS.Debug "    now #{this.get_word()} have moved = #{@has_moved} and #{Game.Words[their_index].get_word()} have moved =  #{Game.Words[their_index].has_moved}\n"
       move: () ->
         if @history.length == 0
           @history = []
           for l in @letters
             @history.push({x: @head.x,y:@head.y})
-        if @direction == -1
-          if @head.x-1 > 0
-            if PS.BeadColor(@head.x-1,@head.y) == G.COLORS.BATTLE_GROUND.PATH
-              @head.x -= 1
-              ### update history ###
-              if @history.length > 2
-                for h in [@history.length-1..1]
-                  @history[h] = @history[h-1]
-              @history[0] = {x: @head.x, y: @head.y}
+        if @has_moved == false
+          PS.Debug "#{this.get_word()} will now move.\n"
+          @has_moved = true
+          if @direction == 1
+            ### moveing to the east ###
+            if @head.x+1 < 29
+              if PS.BeadColor(@head.x+1,@head.y) == G.COLORS.BATTLE_GROUND.PATH
+                @head.x += 1
+                this.update_history()
+              else
+                PS.Debug "#{this.get_word()} couldn't move east because " + PS.BeadColor(@head.x+1,@head.y) + ' != ' + G.COLORS.BATTLE_GROUND.PATH + '\n'
+                if @player == 'player'
+                  if PS.BeadColor(@head.x+1,@head.y) == G.COLORS.COMP.WORD.BG
+                    their_index = PS.BeadData(@head.x+1,@head.y)-1
+                    this.word_fight(their_index)
+                  else if PS.BeadColor(@head.x+1,@head.y) == G.COLORS.COMP.BUFFER.BG
+                    alert 'winner'
+                    window.location.reload()
+                else if @player == 'comp' and PS.BeadColor(@head.x+1,@head.y) == G.COLORS.PLAYER.BUFFER.BG
+                  alert 'loser'
+                  window.location.reload()
             else
-              #alert('combat 1')
-          else
-            @direction = 0
-        else if @direction == 1
-          if @head.x+1 < 29
-            if PS.BeadColor(@head.x+1,@head.y) == G.COLORS.BATTLE_GROUND.PATH
-              @head.x += 1
-              ### update history ###
-              if @history.length > 2
-                for h in [@history.length-1..1]
-                  @history[h] = @history[h-1]
-              @history[0] = {x: @head.x, y: @head.y}
+              ### we turn to virtical ###
+              @direction = 0
+          else if @direction == -1
+            ### we are moving west ###
+            if @head.x-1 > 0
+              if PS.BeadColor(@head.x-1,@head.y) == G.COLORS.BATTLE_GROUND.PATH
+                @head.x -= 1
+                this.update_history()
+              else
+                PS.Debug "#{this.get_word()} couldn't move west because " + PS.BeadColor(@head.x-1,@head.y) + ' != ' + G.COLORS.BATTLE_GROUND.PATH + '\n'
+                if @player == 'player'
+                  if PS.BeadColor(@head.x-1,@head.y) == G.COLORS.COMP.WORD.BG
+                    their_index = PS.BeadData(@head.x-1,@head.y)-1
+                    this.word_fight(their_index)
             else
-              if @player == 'player'
-                if PS.BeadColor(@head.x+1,@head.y) == G.COLORS.COMP.WORD.BG
-                  alert 'combat 2'
-                  #alert this.get_word() + ' vs ' + Game.Words[PS.BeadData(@head.x+1,@head.y)-1].get_word()
-                  r = @letters[0].combat(Game.Words[PS.BeadData(@head.x+1,@head.y)-1].letters[0])
-                  #alert 'we ' + r
-                  if r == 'tie'
-                    PS.BeadFlashColor @head.x+1,@head.y,0xffffff
-                    PS.BeadFlash @head.x+1,@head.y
-                    @letters.splice(0,1)
-                    @history.splice(0,1)
-                    @head = {x: @history[0].x, y: @history[0].y}
-                    Game.Words[PS.BeadData(@head.x+1,@head.y)-1].letters.splice(0,1)
-                    Game.Words[PS.BeadData(@head.x+1,@head.y)-1].history.splice(0,1)
-                    Game.Words[PS.BeadData(@head.x+1,@head.y)-1].head = {x: Game.Words[PS.BeadData(@head.x+1,@head.y)-1].head.history[0].x, y: Game.Words[PS.BeadData(@head.x+1,@head.y)-1].head.history[0].y}
-                  else if r == 'win'
-                    Game.Words[PS.BeadData(@head.x+1,@head.y)-1].letters.splice(0,1)
-                    Game.Words[PS.BeadData(@head.x+1,@head.y)-1].history.splice(0,1)
-                    Game.Words[PS.BeadData(@head.x+1,@head.y)-1].head = {x: Game.Words[PS.BeadData(@head.x+1,@head.y)-1].head.history[0].x, y: Game.Words[PS.BeadData(@head.x+1,@head.y)-1].head.history[0].y}
-                    PS.BeadFlashColor @head.x+1,@head.y, G.COLORS.PLAYER.FLASH
-                    PS.BeadFlash @head.x+1,@head.y
-                  else if r == 'lose'
-                    @letters.splice(0,1)
-                    @history.splice(0,1)
-                    @head = {x: @history[0].x, y: @history[0].y}
-                    PS.BeadFlashColor @head.x+1,@head.y, G.COLORS.COMP.FLASH
-                    PS.BeadFlash @head.x+1,@head.y
-                  #alert this.get_word() + ' vs ' + Game.Words[PS.BeadData(@head.x+1,@head.y)-1].get_word()
-                else if PS.BeadColor(@head.x+1,@head.y) == G.COLORS.COMP.BUFFER.BG
-                  alert 'win game'
+              ### we turn to virtical ###
+              @direction = 0
+          else if @direction == 0
+            ### move virticaly ###
+            if @player == 'player'
+              if @head.y-1 >= 0
+                if PS.BeadColor(@head.x,@head.y-1) == G.COLORS.BATTLE_GROUND.PATH
+                  @head.y -= 1
+                  this.update_history()
+                else if PS.BeadGlyph(@head.x,@head.y-1) == 0 or PS.BeadGlyph(@head.x,@head.y-1) == 32
+                  ### we turn to horizontal ###
+                  @direction = 1 if @head.x == 1
+                  @direction = -1 if @head.x == 28
                 else
-                  alert '???'
+                  PS.Debug "#{this.get_word()} couldn't move north because " + PS.BeadColor(@head.x,@head.y-1) + ' != ' + G.COLORS.BATTLE_GROUND.PATH + '\n'
+                  if PS.BeadColor(@head.x,@head.y-1) == G.COLORS.COMP.WORD.BG
+                    their_index = PS.BeadData(@head.x,@head.y-1)-1
+                    this.word_fight(their_index)
+              else
+                ### we turn to horizontal ###
+                @direction = 1 if @head.x == 1
+                @direction = -1 if @head.x == 28
+            else if @player == 'comp'
+              if @head.y+1 <= 26
+                if PS.BeadColor(@head.x,@head.y+1) == G.COLORS.BATTLE_GROUND.PATH
+                  @head.y += 1
+                  this.update_history()
+                else if PS.BeadGlyph(@head.x,@head.y+1) == 0 or PS.BeadGlyph(@head.x,@head.y+1) == 32
+                  ### we turn to horizontal ###
+                  @direction = 1 if @head.x == 1
+                  @direction = -1 if @head.x == 28
+                else
+                  PS.Debug "#{this.get_word()} couldn't move north because " + PS.BeadColor(@head.x,@head.y-1) + ' != ' + G.COLORS.BATTLE_GROUND.PATH + '\n'
+              else
+                ### we turn to horizontal ###
+                @direction = 1 if @head.x == 1
+                @direction = -1 if @head.x == 28
 
-          else
-            @direction = 0
-        else
-          if @player == 'player'
-            if @head.y-1 >= 0 and PS.BeadColor(@head.x,@head.y-1) == G.COLORS.BATTLE_GROUND.PATH
-              @head.y -= 1
-              ### update history ###
-              if @history.length > 2
-                for h in [@history.length-1..1]
-                  @history[h] = @history[h-1]
-              @history[0] = {x: @head.x, y: @head.y}
-            else if @head.y == 0 or (PS.BeadGlyph(@head.x,@head.y-1) == 0 or PS.BeadGlyph(@head.x,@head.y-1) == 32)
-              @direction = 1 if @head.x == 1
-              @direction = -1 if @head.x == 28
-            else
-              alert('combat 3 |' + PS.BeadGlyph(@head.x,@head.y-1) + '|')
-          else if @player = 'comp'
-            if @head.y+1 < 27 and PS.BeadColor(@head.x,@head.y+1) == G.COLORS.BATTLE_GROUND.PATH
-              @head.y += 1
-              ### update history ###
-              if @history.length > 2
-                for h in [@history.length-1..1]
-                  @history[h] = @history[h-1]
-              @history[0] = {x: @head.x, y: @head.y}
-            else if PS.BeadGlyph(@head.x,@head.y+1) == 0 or PS.BeadGlyph(@head.x,@head.y+1) == ' '
-              @direction = 1 if @head.x == 1
-              @direction = -1 if @head.x == 28
-            else
-              alert('combat 4')
+
+
+
 
 
 
@@ -435,14 +466,12 @@ jQuery ->
           sx = 28
           ex = 1
         for x in [sx..ex]
-          PS.BeadFlash x,y, false
           PS.BeadData x,y, 0
           PS.BeadColor x,y, G.COLORS.BATTLE_GROUND.PATH
           PS.BeadGlyph x,y, ' '
         ye = Math.max(0,(26 - Math.floor(26*((s+1) / Game.Switch_backs))))
         for yi in [y..ye]
           PS.BeadData ex,yi, 0
-          PS.BeadFlash ex,yi, false
           PS.BeadColor ex,yi, G.COLORS.BATTLE_GROUND.PATH
           PS.BeadGlyph ex,yi, ' '
       wi = 0
@@ -532,16 +561,24 @@ jQuery ->
 
     build_player_word = () ->
       ### Takes the current word and starts it on its way to death ###
-      if Game.Player.Current_word.length > 0 and word_in_dictionary(Game.Player.Current_word) and PS.BeadColor(29-Game.Player.Max_word_length-1,26) == G.COLORS.BATTLE_GROUND.PATH
-        w = new word()
-        for l in Game.Player.Current_word
-          w.letters.push(new letter('?',l))
-        w.head.x = 29-Game.Player.Max_word_length
-        w.head.y = 26
-        w.player = 'player'
-        w.direction = -1
-        Game.Words.push(w)
-        Game.Player.Current_word = ''
+      if Game.Player.Current_word.length > 0
+        if word_in_dictionary(Game.Player.Current_word)
+          if PS.BeadColor(29-Game.Player.Max_word_length-1,26) == G.COLORS.BATTLE_GROUND.PATH
+            w = new word()
+            for l in Game.Player.Current_word
+              w.letters.push(new letter('?',l))
+            w.head.x = 29-Game.Player.Max_word_length
+            w.head.y = 26
+            w.player = 'player'
+            w.direction = -1
+            Game.Words.push(w)
+            Game.Player.Current_word = ''
+          else
+            PS.StatusText 'No room to move forward.'
+        else
+          PS.StatusText Game.Player.Current_word + ' is not in our dictionary.'
+      else
+        PS.StatusText 'Please enter a word.'
 
     build_comp_word = () ->
       ### Takes the current word and starts it on its way to death ###
@@ -555,8 +592,227 @@ jQuery ->
         w.direction = -1
         Game.Words.push(w)
         Game.Comp.Current_word = ''
+
+    draw_home_screen = () ->
+      PS.BeadFlash PS.ALL,PS.ALL, false
+      PS.BeadColor PS.ALL,PS.ALL, 0x333333
+      PS.BeadBorderWidth PS.ALL,PS.ALL, 0
+      PS.BeadGlyph PS.ALL,PS.ALL, 0
+      ###title ###
+      t = ['W','o','r','d',' ','W','a','r','s']
+      x = Math.floor((30-t.length) / 2)
+      for ti in t
+        PS.BeadGlyphColor x,2,0x000000
+        PS.BeadColor x,2,0xffffff
+        PS.BeadGlyph x,2,ti
+        x += 1
+
+      ### Game settings ###
+      t = ['G','a','m','e',' ','S','e','t','t','i','n','g','s']
+      x = 1
+      for ti in t
+        PS.BeadGlyphColor x,5,0x000000
+        PS.BeadColor x,5,0xffffff
+        PS.BeadGlyph x,5,ti
+        x += 1
+      t = ['G','a','m','e',' ','S','p','e','e','d']
+      x = 2
+      for ti in t
+        PS.BeadGlyphColor x,7,0x000000
+        PS.BeadColor x,7,0xffffff
+        PS.BeadGlyph x,7,ti
+        x += 1
+      PS.BeadGlyphColor 3,9,0x000000
+      PS.BeadBorderColor 3,9,0x000000
+      PS.BeadBorderWidth 3,9,1
+      PS.BeadColor 3,9,0xffffff
+      PS.BeadGlyph 3,9,'◀'
+      PS.BeadData 3,9, (x,y) ->
+        PS.AudioPlay 'fx_click'
+        Setting.Game_speed = Math.max(1,Setting.Game_speed-1)
+        draw_home_screen()
+      gs = Setting.Game_speed
+      tens = Math.floor(gs/10)
+      ones = gs - tens*10
+      PS.BeadGlyphColor 4,9,0x000000
+      PS.BeadColor 4,9,0xffffff
+      PS.BeadGlyph 4,9,String(tens)
+      PS.BeadGlyphColor 5,9,0x000000
+      PS.BeadColor 5,9,0xffffff
+      PS.BeadGlyph 5,9,String(ones)
+      PS.BeadGlyphColor 6,9,0x000000
+      PS.BeadBorderColor 6,9,0x000000
+      PS.BeadBorderWidth 6,9,1
+      PS.BeadColor 6,9,0xffffff
+      PS.BeadGlyph 6,9,'▶'
+      PS.BeadData 6,9, (x,y) ->
+        PS.AudioPlay 'fx_click'
+        Setting.Game_speed = Math.min(60,Setting.Game_speed+1)
+        draw_home_screen()
+      t = ['G','a','m','e',' ','T','y','p','e']
+      x = 2
+      for ti in t
+        PS.BeadGlyphColor x,11,0x000000
+        PS.BeadColor x,11,0xffffff
+        PS.BeadGlyph x,11,ti
+        x += 1
+      PS.BeadGlyphColor 3,13,0x000000
+      PS.BeadBorderColor 3,13,0x000000
+      PS.BeadBorderWidth 3,13,1
+      PS.BeadColor 3,13,0xffffff
+      PS.BeadGlyph 3,13,'◀'
+      PS.BeadData 3,13, (x,y) ->
+        PS.AudioPlay 'fx_click'
+        Setting.Game_type -= 1
+        Setting.Game_type = Setting.Game_types.length-1 if Setting.Game_type < 0
+        draw_home_screen()
+      t = Setting.Game_types[Setting.Game_type]
+      x = 4
+      for ti in t
+        PS.BeadGlyphColor x,13,0x000000
+        PS.BeadColor x,13,0xffffff
+        PS.BeadGlyph x,13,ti
+        x += 1
+      PS.BeadGlyphColor x,13,0x000000
+      PS.BeadBorderColor x,13,0x000000
+      PS.BeadBorderWidth x,13,1
+      PS.BeadColor x,13,0xffffff
+      PS.BeadGlyph x,13,'▶'
+      PS.BeadData x,13, (x,y) ->
+        PS.AudioPlay 'fx_click'
+        Setting.Game_type = (Setting.Game_type + 1 ) % Setting.Game_types.length
+        draw_home_screen()
+
+      t = 'Brutal'
+      x = 2
+      for ti in t
+        PS.BeadGlyphColor x,15,0x000000
+        PS.BeadColor x,15,0xffffff
+        PS.BeadGlyph x,15,ti
+        x += 1
+
+      PS.BeadGlyph x+1,15, '✓' if Setting.Brutal_mode
+      PS.BeadGlyph x+1,15, ' ' if Setting.Brutal_mode == false
+      PS.BeadGlyphColor x+1,15,0x000000
+      PS.BeadColor x+1,15,0xffffff
+      PS.BeadBorderWidth x+1,15, 1
+      PS.BeadBorderColor x+1,15, 0x000000
+      PS.BeadData x+1,15, (x,y) ->
+        if Setting.Brutal_mode
+          Setting.Brutal_mode = false
+        else
+          Setting.Brutal_mode = true
+        draw_home_screen()
+      ### AI settings ###
+      t = ['A','I',' ','S','e','t','t','i','n','g','s']
+      x = 29-t.length
+      for ti in t
+        PS.BeadGlyphColor x,5,0x000000
+        PS.BeadColor x,5,0xffffff
+        PS.BeadGlyph x,5,ti
+        x += 1
+
+      t = 'AI Type'
+      x = 28-t.length
+      for ti in t
+        PS.BeadGlyphColor x,7,0x000000
+        PS.BeadColor x,7,0xffffff
+        PS.BeadGlyph x,7,ti
+        x += 1
+      PS.BeadGlyphColor 27,9,0x000000
+      PS.BeadBorderColor 27,9,0x000000
+      PS.BeadBorderWidth 27,9,1
+      PS.BeadColor 27,9,0xffffff
+      PS.BeadGlyph 27,9,'▶'
+      PS.BeadData 27,9, (x,y) ->
+        PS.AudioPlay 'fx_click'
+        Setting.AI_type = (Setting.AI_type + 1 ) % Setting.AI_types.length
+        draw_home_screen()
+      t = Setting.AI_types[Setting.AI_type]
+      x = 27- t.length
+      for ti in t
+        PS.BeadGlyphColor x,9,0x000000
+        PS.BeadColor x,9,0xffffff
+        PS.BeadGlyph x,9,ti
+        x += 1
+
+      t = 'AI Speed'
+      x = 28-t.length
+      for ti in t
+        PS.BeadGlyphColor x,11,0x000000
+        PS.BeadColor x,11,0xffffff
+        PS.BeadGlyph x,11,ti
+        x += 1
+
+      PS.BeadGlyphColor 24,13,0x000000
+      PS.BeadBorderColor 24,13,0x000000
+      PS.BeadBorderWidth 24,13,1
+      PS.BeadColor 24,13,0xffffff
+      PS.BeadGlyph 24,13,'◀'
+      PS.BeadData 24,13, (x,y) ->
+        PS.AudioPlay 'fx_click'
+        Setting.AI_speed = Math.max(1,Setting.AI_speed-1)
+        draw_home_screen()
+      gs = Setting.AI_speed
+      tens = Math.floor(gs/10)
+      ones = gs - tens*10
+      PS.BeadGlyphColor 25,13,0x000000
+      PS.BeadColor 25,13,0xffffff
+      PS.BeadGlyph 25,13,String(tens)
+      PS.BeadGlyphColor 26,13,0x000000
+      PS.BeadColor 26,13,0xffffff
+      PS.BeadGlyph 26,13,String(ones)
+      PS.BeadGlyphColor 27,13,0x000000
+      PS.BeadBorderColor 27,13,0x000000
+      PS.BeadBorderWidth 27,13,1
+      PS.BeadColor 27,13,0xffffff
+      PS.BeadGlyph 27,13,'▶'
+      PS.BeadData 27,13, (x,y) ->
+        PS.AudioPlay 'fx_click'
+        Setting.AI_speed = Math.min(60,Setting.AI_speed+1)
+        draw_home_screen()
+
+      t = 'Play'
+      x = Math.floor((30-t.length) / 2)
+      for ti in t
+        PS.BeadGlyphColor x,17,0x000000
+        PS.BeadColor x,17,0xffffff
+        PS.BeadGlyph x,17,ti
+        PS.BeadData x,17, (x,y) ->
+          PS.AudioPlay 'perc_triangle'
+          G.Mode = 'game'
+          PS.Init()
+        x += 1
+
+
+
+
+    load_dictionary = () ->
+      result = null
+      $.ajax
+        type: "GET"
+        url: "/dict"
+        async: false
+        success: (data) ->
+          result = data.split('\n')
+
+      result
+
+    load_ai_script = () ->
+      result = null
+      $.ajax
+        type: "GET"
+        url: AI_Types[Setting.AI_types[Setting.AI_type]]
+        async: false
+        success: (data) ->
+          result = data
+
+      result
     word_in_dictionary = (word) ->
-      return true
+      for w in Dictionary
+        if w == word
+          return true
+      return false
     debug = (response) ->
       property_names = ""
       for propertyName of response
@@ -598,6 +854,7 @@ jQuery ->
       z: new letter(false,'z')
     G =
       Sound: true
+      D_loaded: false
       COLORS:
         PLAYER:
           WORD:
@@ -621,13 +878,15 @@ jQuery ->
           PATH: 0x89B474
           BG: ([0x557F50,0x8A661E,0x41700F])
       Tick: 0
-
+      Mode: 'home'
+    Dictionary = 'EMPTY'
     Game =
       Move_Time: 30
       Switch_backs: 3
       Player:
         Max_word_length: 5
         Current_word: ''
+        Used_Words: []
         Resources:
           tech:
             income: 1
@@ -712,24 +971,220 @@ jQuery ->
             current: 0
       Comp:
         Max_word_length: 8
-        Current_word: 'deat'
+        Current_word: ''
+        Type_speed: 60
+        Letter_index: 0
+        Script: "EMPTY"
       Words: []
-
+    Setting =
+      AI_type: 0
+      AI_types: ['hamlet']
+      AI_speed: 60
+      Game_speed: 15
+      Game_type: 0
+      Game_types: ['Horder','Builder']
+      Brutal_mode: false
+    Game_Types =
+      Horder:
+        tech:
+          income: 0
+          current: 10
+        a:
+          income: 0
+          current: 20
+        b:
+          income: 0
+          current: 10
+        c:
+          income: 0
+          current: 10
+        d:
+          income: 0
+          current: 10
+        e:
+          income: 0
+          current: 20
+        f:
+          income: 0
+          current: 10
+        g:
+          income: 0
+          current: 10
+        h:
+          income: 0
+          current: 10
+        i:
+          income: 0
+          current: 20
+        j:
+          income: 0
+          current: 10
+        k:
+          income: 0
+          current: 10
+        l:
+          income: 0
+          current: 10
+        m:
+          income: 0
+          current: 10
+        n:
+          income: 0
+          current: 10
+        o:
+          income: 0
+          current: 20
+        p:
+          income: 0
+          current: 10
+        q:
+          income: 0
+          current: 10
+        r:
+          income: 0
+          current: 10
+        s:
+          income: 0
+          current: 10
+        t:
+          income: 0
+          current: 10
+        u:
+          income: 0
+          current: 20
+        v:
+          income: 0
+          current: 10
+        w:
+          income: 0
+          current: 10
+        x:
+          income: 0
+          current: 10
+        y:
+          income: 0
+          current: 10
+        z:
+          income: 0
+          current: 10
+      Builder:
+        tech:
+          income: 0
+          current: 25
+        a:
+          income: 0
+          current: 0
+        b:
+          income: 0
+          current: 0
+        c:
+          income: 0
+          current: 0
+        d:
+          income: 0
+          current: 0
+        e:
+          income: 0
+          current: 0
+        f:
+          income: 0
+          current: 0
+        g:
+          income: 0
+          current: 0
+        h:
+          income: 0
+          current: 0
+        i:
+          income: 0
+          current: 0
+        j:
+          income: 0
+          current: 0
+        k:
+          income: 0
+          current: 0
+        l:
+          income: 0
+          current: 0
+        m:
+          income: 0
+          current: 0
+        n:
+          income: 0
+          current: 0
+        o:
+          income: 0
+          current: 0
+        p:
+          income: 0
+          current: 0
+        q:
+          income: 0
+          current: 0
+        r:
+          income: 0
+          current: 0
+        s:
+          income: 0
+          current: 0
+        t:
+          income: 0
+          current: 0
+        u:
+          income: 0
+          current: 0
+        v:
+          income: 0
+          current: 0
+        w:
+          income: 0
+          current: 0
+        x:
+          income: 0
+          current: 0
+        y:
+          income: 0
+          current: 0
+        z:
+          income: 0
+          current: 0
+    AI_Types =
+      hamlet: '/wordwars/ai/hamlet'
+    Dictionary = load_dictionary()
     ###------------------------------------------ PS Events ----------------------------------------- ###
     PS.Init = ->
       PS.GridSize 30,30
       PS.BeadBorderWidth PS.ALL,PS.ALL,0
       PS.BeadColor PS.ALL,PS.ALL,0x555555
+      if G.Mode == 'game'
+        Dictionary = load_dictionary() if Dictionary == 'EMPTY'
 
-      PS.Clock(1)
-      draw_battleground()
-      draw_tech_zone()
+        Game.Move_Time = Setting.Game_speed
+        Game.Switch_backs = 3
+
+        Game.Comp.Current_word = ''
+        Game.Comp.Type_speed = Setting.AI_speed
+        Game.Comp.Letter_index = 0
+        Game.Comp.Script = load_ai_script()
+
+        Game.Player.Current_word = ''
+        Game.Player.Used_Words = []
+        for r of Game_Types[Setting.Game_types[Setting.Game_type]]
+          Game.Player.Resources[r].income = Game_Types[Setting.Game_types[Setting.Game_type]][r].income
+          Game.Player.Resources[r].current = Game_Types[Setting.Game_types[Setting.Game_type]][r].current
+
+
+        PS.Clock(1)
+        draw_battleground()
+        draw_tech_zone()
+      else if G.Mode == 'home'
+        draw_home_screen()
 
     PS.Click = (x, y, data) ->
       "use strict"
       if typeof data == "function"
         data(x,y)
-      else
 
     PS.Release = (x, y, data) ->
       "use strict"
@@ -777,16 +1232,29 @@ jQuery ->
       G.Tick += 1
       G.Tick = 0 if G.Tick >= 216000
       ### move words ###
-      if G.Tick % 15 == 0
+      if G.Tick % Game.Move_Time == 0
+        dwi = -1
         wi = 0
         for w in Game.Words
           draw_path()
-          if w.letters.length > 0
-            w.move()
+          if w.letters.length > 0 and w.history.length > 0
+            Game.Words[wi].move()
           else
-            alert 'dead'
-            Game.Words.splice(wi,1)
+            dwi = wi
           wi += 1
+        for w in Game.Words
+          w.has_moved = false
+        if dwi != -1
+          Game.Words.splice(dwi,1)
+      ### have comp type ###
+      if G.Tick % Game.Comp.Type_speed == 0
+        next_letter = Game.Comp.Script[Game.Comp.Letter_index].toLowerCase()
+        Game.Comp.Letter_index += 1
+        if next_letter in [' ','\n']
+          build_comp_word()
+        else
+          Game.Comp.Current_word = Game.Comp.Current_word + next_letter
+
       ### update resorces ###
       for r of Game.Player.Resources
         if Game.Player.Resources[r].income > 0  and G.Tick % (Game.Player.Resources[r].income * 60) == 0

@@ -16,6 +16,8 @@ WebSite::Application.routes.draw do
   match '/labyrinth/:patch' => 'application#labyrinth', :constraints => { :patch => /\d*/ }
   #games
   match '/wordwars/:patch' => 'application#wordwars', :constraints => { :patch => /\d*/ }
+  match '/dict' => 'application#dictionary'
+  match '/wordwars/ai/:script' => 'application#word_wars_ai_script'
   # The priority is based upon order of creation:
   # first created -> highest priority.
 
