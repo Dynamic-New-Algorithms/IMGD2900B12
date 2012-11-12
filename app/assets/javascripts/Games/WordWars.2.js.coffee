@@ -215,43 +215,70 @@ jQuery ->
         p = Math.random()
         d = (Math.random()*(1-p))
         a = 1 - p - d
-        @next_build = {p: p,d: p+d,a: 1}
+        @next_build = {p: p,d: d,a: a}
         @attack_feq = Math.floor(Math.random()*18000)
 
       think: () ->
+        force_attack = false
         if GAME.Comp.Credits >= 3
-          nb = Math.random()
-          if nb <= @next_build.p
-            GAME.Comp.Credits -= 1
-            nb = 'p'
-          else if nb <= @next_build.d
-            GAME.Comp.Credits -= 1
-            nb = 'd'
-          else if nb <= @next_build.a
-            GAME.Comp.Credits -= 2
-            nb = 'a'
-
+          their_a = 0
+          their_d = 0
+          their_p = 0
+          my_p = 0
+          my_a = 0
+          my_d = 0
           options = []
           for x in [GAME.Board.Width..0]
             for y in [GAME.Board.Height..0]
               
               test_a = x - 1 >= 0 and GAME.Board.Data[x - 1][y].ocupied != 0 and GAME.Board.Data[x - 1][y].ocupied.player == 'comp' and GAME.Board.Data[x - 1][y].ocupied.kind != 'a'
-              #PS.Debug '\n'+x + ',' + y + ') test_a ' + x - 1 >= 0 + '  and  ' +GAME.Board.Data[x - 1][y].ocupied != 0 + '  and  ' +GAME.Board.Data[x - 1][y].ocupied.player == 'comp' + '  and  ' +GAME.Board.Data[x - 1][y].ocupied.kind != 'a'
               test_b = x+1 <= GAME.Board.Width and GAME.Board.Data[x + 1][y].ocupied != 0  and GAME.Board.Data[x + 1][y].ocupied.player == 'comp' and GAME.Board.Data[x + 1][y].ocupied.kind != 'a'
-              #PS.Debug '\n     test_b ' + x+1 <= GAME.Board.Width + '  and  ' +GAME.Board.Data[x + 1][y].ocupied != 0  + '  and  ' +GAME.Board.Data[x + 1][y].ocupied.player == 'comp' + '  and  ' +GAME.Board.Data[x + 1][y].ocupied.kind != 'a'
               test_c = y - 1 >= 0 and GAME.Board.Data[x][y - 1].ocupied != 0  and GAME.Board.Data[x][y - 1].ocupied.player == 'comp' and GAME.Board.Data[x][y - 1].ocupied.kind != 'a'
-              #PS.Debug '\n     test_c ' + y - 1 >= 0 + '  and  ' +GAME.Board.Data[x][y - 1].ocupied != 0  + '  and  ' +GAME.Board.Data[x][y - 1].ocupied.player == 'comp' + '  and  ' +GAME.Board.Data[x][y - 1].ocupied.kind != 'a'
               test_d = y+1 <= GAME.Board.Height and GAME.Board.Data[x][y + 1].ocupied != 0 and GAME.Board.Data[x][y + 1].ocupied.player == 'comp' and GAME.Board.Data[x][y + 1].ocupied.kind != 'a'
-              #PS.Debug '\n     test_d ' + y+1 <= GAME.Board.Height + '  and  ' +GAME.Board.Data[x][y + 1].ocupied != 0 + '  and  ' +GAME.Board.Data[x][y + 1].ocupied.player == 'comp' + '  and  ' +GAME.Board.Data[x][y + 1].ocupied.kind != 'a'
 
-              #alert x + ',' + y + ') ' + test_a + ' or ' +test_b + ' or ' +test_c + ' or ' +test_d
               if GAME.Board.Data[x][y].ocupied == 0 and (test_a or test_b or test_c or test_d)
-
                 options.push({x: x,y: y})
+              else if GAME.Board.Data[x][y].ocupied != 0 and GAME.Board.Data[x][y].ocupied.player == 'player'
+                their_a += 1 if GAME.Board.Data[x][y].ocupied.kind == 'a'
+                their_d += 1 if GAME.Board.Data[x][y].ocupied.kind == 'd'
+                their_p += 1 if GAME.Board.Data[x][y].ocupied.kind == 'p'
+              else if GAME.Board.Data[x][y].ocupied != 0 and GAME.Board.Data[x][y].ocupied.player == 'comp'
+                my_p += 1 if GAME.Board.Data[x][y].ocupied.kind == 'p'
+                my_d += 1 if GAME.Board.Data[x][y].ocupied.kind == 'd'
+                my_a += 1 if GAME.Board.Data[x][y].ocupied.kind == 'a'
           if options.length > 0
+            nb = 'p'
+            nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p
+            nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a
+            nb = 'p' if my_p <= 5
+            GAME.Comp.Credits -= 1
+            GAME.Comp.Credits -= 1 if nb == 'a'
             loc = options[Math.floor(Math.random()*options.length)]
             nb = new unit(loc.x,loc.y,nb,'comp')
+            nb.dest.x = loc.x
+            nb.dest.y = loc.y
             GAME.Board.Data[nb.x][nb.y].ocupied = nb
+            force_attack = true if my_a / (my_a+my_d+my_p) > @next_build.a
+        if G.Tick % @attack_feq == 0 or force_attack
+          move_op = []
+          my_a = []
+          for x in [0..GAME.Board.Width]
+            for y in [0..GAME.Board.Height]
+              test_a = x - 1 >= 0 and GAME.Board.Data[x - 1][y].ocupied != 0 and GAME.Board.Data[x - 1][y].ocupied.player == 'player'
+              test_b = x+1 <= GAME.Board.Width and GAME.Board.Data[x + 1][y].ocupied != 0  and GAME.Board.Data[x + 1][y].ocupied.player == 'player'
+              test_c = y - 1 >= 0 and GAME.Board.Data[x][y - 1].ocupied != 0  and GAME.Board.Data[x][y - 1].ocupied.player == 'player'
+              test_d = y+1 <= GAME.Board.Height and GAME.Board.Data[x][y + 1].ocupied != 0 and GAME.Board.Data[x][y + 1].ocupied.player == 'player'
+
+              if GAME.Board.Data[x][y].ocupied == 0 and (test_a or test_b or test_c or test_d)
+                move_op.push({x: x,y: y})
+              else if GAME.Board.Data[x][y].ocupied != 0 and  GAME.Board.Data[x][y].ocupied.player == 'comp' and  GAME.Board.Data[x][y].ocupied.kind == 'a'
+                my_a.push({x: x,y: y})
+          for a in my_a
+            d = move_op[Math.floor(Math.random()*(move_op.length))]
+            GAME.Board.Data[a.x][a.y].ocupied.dest.x = d.x
+            GAME.Board.Data[a.x][a.y].ocupied.dest.y = d.y
+
+
 
 
 
@@ -277,6 +304,7 @@ jQuery ->
         GAME.Board.Data.push(col)
       GAME.Board.Data[4][4].ocupied = new unit(4,4,'p','player')
       GAME.Board.Data[GAME.Board.Width-5][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-5,GAME.Board.Height-5,'p','comp')
+      GAME.Board.Data[GAME.Board.Width-6][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-6,GAME.Board.Height-5,'d','comp')
 
     move_game= () ->
       for x in [0..GAME.Board.Width]
@@ -295,6 +323,7 @@ jQuery ->
                   if Math.random() <= G.BALANCE.BULLET.SUCCESS_RATE
                     GAME.Board.Data[b.x][b.y].ocupied = 0
                     PS.AudioPlay G.SOUNDS.DIE
+                    b.life = -1
               else
                 b.life = -1
 
@@ -303,7 +332,7 @@ jQuery ->
         for bi in [0..GAME.Board.Bullets.length-1]
           if (bi-removed) < GAME.Board.Bullets.length
             GAME.Board.Bullets[bi-removed].has_moved = false
-            if GAME.Board.Bullets[bi-removed].life < 0
+            if GAME.Board.Bullets[bi-removed].life <= 0
               GAME.Board.Bullets.splice(bi-removed,1)
               removed += 1
 
@@ -415,7 +444,7 @@ jQuery ->
       Scroll_speed: 1
       BALANCE:
         BULLET:
-          LIFE: 5
+          LIFE: 3
           SUCCESS_RATE: 0.5
         PRODUCTION_RATE: 0.01
         SHOOTING_FEQ: 15
@@ -434,7 +463,7 @@ jQuery ->
           x: 0
           y: 0
       Player:
-        Credits: 5
+        Credits: 2
         Hover: 0
         Selected: 0
         Last: {x: 0,y: 0}
