@@ -2,7 +2,7 @@
 jQuery ->
   ### you need these variables
   but you can take out the jQuery stuff ###
-  if jQuery('#name').html() == 'WordWars2'
+  if jQuery('#name').html() == 'WordWars3'
     ### START OF GAME CODE ###
     ###------------------------------------ Classes -------------------------------------###
     class unit
@@ -23,7 +23,7 @@ jQuery ->
 
           x = @x - GAME.Off_Set.x
           y = @y - GAME.Off_Set.y
-          
+
           test_a = @x - 1 >= 0 and GAME.Board.Data[@x - 1][@y].ocupied != 0 and GAME.Board.Data[@x - 1][@y].ocupied.player == 'player' and GAME.Board.Data[@x - 1][@y].ocupied.kind != 'a'
           test_b = @x+1 <= GAME.Board.Width and GAME.Board.Data[@x + 1][@y].ocupied != 0  and GAME.Board.Data[@x + 1][@y].ocupied.player == 'player' and GAME.Board.Data[@x + 1][@y].ocupied.kind != 'a'
           test_c = @y - 1 >= 0 and GAME.Board.Data[@x][@y - 1].ocupied != 0  and GAME.Board.Data[@x][@y - 1].ocupied.player == 'player' and GAME.Board.Data[@x][@y - 1].ocupied.kind != 'a'
@@ -140,10 +140,7 @@ jQuery ->
               south = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y+1)) + m + 1 if y+1 < GAME.Board.Height and (GAME.Board.Data[x][y+1].ocupied == 0)# or GAME.Board.Data[x][y+1].ocupied.player != @player)
               east = Math.abs(@dest.x - (x+1)) + Math.abs(@dest.y - y) + m + 1 if x+1 < GAME.Board.Width and (GAME.Board.Data[x+1][y].ocupied == 0)# or GAME.Board.Data[x+1][y].ocupied.player != @player)
               west = Math.abs(@dest.x - (x-1)) + Math.abs(@dest.y - y) + m + 1 if x-1 > 0 and (GAME.Board.Data[x-1][y].ocupied == 0)# or GAME.Board.Data[x-1][y].ocupied.player != @player)
-              nort = m+1 if y-1 == @dest.y and x == @dest.x
-              south = m+1 if y+1 == @dest.y and x == @sext.x
-              east = m+1 if y == @dest.y and x+1 == @dest.x
-              west = m+1 if y == @dest.y and x-1 == @dest.x
+
               apple[String(x+','+(y-1))] = {v: north, moves: m+1,history: hi+'n',explored: false} if north != -1 and (apple[String(x+','+(y-1))] is undefined or apple[String(x+','+(y-1))].v > north )
               apple[String(x+','+(y+1))] = {v: south, moves: m+1,history: hi+'s',explored: false} if south != -1 and (apple[String(x+','+(y+1))] is undefined or apple[String(x+','+(y+1))].v > south )
               apple[String((x+1)+','+y)] = {v: east, moves: m+1,history: hi+'e',explored: false} if east != -1 and (apple[String((x+1)+','+y)] is undefined or apple[String((x+1)+','+y)].v > east )
@@ -167,25 +164,35 @@ jQuery ->
                   options.push(String((@x)+','+(@y-1)))
                 if @y < @dest.y and GAME.Board.Data[@x][@y+1].ocupied == 0
                   options.push(String((@x)+','+(@y+1)))
-                return false if options.length == 0
                 lowest = options[Math.floor(Math.random()*options.length)]
                 break
               lowest = options[Math.floor(Math.random()*options.length)]
-            move = apple[lowest].history[0]
-            dx = 0
-            dy = 0
-            dx = 1 if move == 'e'
-            dx = -1 if move == 'w'
-            dy = -1 if move == 'n'
-            dy = 1 if move == 's'
-            if GAME.Board.Data[@x+dx][@y+dy].ocupied == 0
-              GAME.Board.Data[@x][@y].ocupied = 0
-              @y = @y - 1 if move == 'n'
-              @y = @y + 1 if move == 's'
-              @x = @x + 1 if move == 'e'
-              @x = @x - 1 if move == 'w'
-              GAME.Board.Data[@x][@y].ocupied = this
-              GAME.Player.Selected = {x: @x,y: @y} if @selected
+            if apple[lowest] != undefined
+              move = apple[lowest].history[0]
+              if apple[lowest].history.length == 0
+                options = []
+                if @x < @dest.x and GAME.Board.Data[@x+1][@y].ocupied == 0
+                  options.push('e')
+                if @x > @dest.x and GAME.Board.Data[@x-1][@y].ocupied == 0
+                  options.push('w')
+                if @y > @dest.y and GAME.Board.Data[@x][@y-1].ocupied == 0
+                  options.push('n')
+                if @y < @dest.y and GAME.Board.Data[@x][@y+1].ocupied == 0
+                  options.push('s')
+                move = options[Math.floor(Math.random()*options.length)]
+              dx = 0
+              dy = 0
+              dx = 1 if move == 'e'
+              dx = -1 if move == 'w'
+              dy = -1 if move == 'n'
+              dy = 1 if move == 's'
+              if GAME.Board.Data[@x+dx][@y+dy].ocupied == 0
+                GAME.Board.Data[@x][@y].ocupied = 0
+                @y = @y - 1 if move == 'n'
+                @y = @y + 1 if move == 's'
+                @x = @x + 1 if move == 'e'
+                @x = @x - 1 if move == 'w'
+                GAME.Board.Data[@x][@y].ocupied = this
 
 
     class bullet
@@ -242,7 +249,7 @@ jQuery ->
           options = []
           for x in [GAME.Board.Width..0]
             for y in [GAME.Board.Height..0]
-              
+
               test_a = x - 1 >= 0 and GAME.Board.Data[x - 1][y].ocupied != 0 and GAME.Board.Data[x - 1][y].ocupied.player == 'comp' and GAME.Board.Data[x - 1][y].ocupied.kind != 'a'
               test_b = x+1 <= GAME.Board.Width and GAME.Board.Data[x + 1][y].ocupied != 0  and GAME.Board.Data[x + 1][y].ocupied.player == 'comp' and GAME.Board.Data[x + 1][y].ocupied.kind != 'a'
               test_c = y - 1 >= 0 and GAME.Board.Data[x][y - 1].ocupied != 0  and GAME.Board.Data[x][y - 1].ocupied.player == 'comp' and GAME.Board.Data[x][y - 1].ocupied.kind != 'a'
@@ -291,11 +298,6 @@ jQuery ->
             GAME.Board.Data[a.x][a.y].ocupied.dest.y = d.y
 
 
-
-
-
-
-
     ###------------------------------------------ Helper functions ----------------------------------------- ###
     build_blank_board = () ->
       GAME.Board.Data = []
@@ -315,8 +317,9 @@ jQuery ->
           col.push({ocupied: 0,color: color})
         GAME.Board.Data.push(col)
       GAME.Board.Data[4][4].ocupied = new unit(4,4,'p','player')
-      GAME.Board.Data[GAME.Board.Width-5][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-5,GAME.Board.Height-5,'p','comp')
-      GAME.Board.Data[GAME.Board.Width-6][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-6,GAME.Board.Height-5,'d','comp')
+      if G.Mode == 'play'
+        GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-4,'p','comp')
+        GAME.Board.Data[GAME.Board.Width-5][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-5,GAME.Board.Height-5,'d','comp')
 
     move_game= () ->
       player_unit_count = 0
@@ -327,15 +330,17 @@ jQuery ->
             GAME.Board.Data[x][y].ocupied.move() if GAME.Board.Data[x][y].ocupied.has_moved == false
             player_unit_count += 1 if GAME.Board.Data[x][y].ocupied.player == 'player'
             comp_unit_count += 1 if GAME.Board.Data[x][y].ocupied.player == 'comp'
-
-      if player_unit_count == 0
-        PS.Clock 0
-        alert 'Loser'
-        window.location.reload()
-      if comp_unit_count == 0
-        PS.Clock 0
-        alert 'Winner'
-        window.location.reload()
+      if G.Mode == 'play' or (G.Mode == 'tutorial' and TUT.current_step == 4)
+        if player_unit_count == 0
+          PS.Clock 0
+          alert 'Loser'
+          G.Mode = 'home'
+          PS.Init()
+        if comp_unit_count == 0
+          PS.Clock 0
+          alert 'Winner'
+          G.Mode = 'home'
+          PS.Init()
       if GAME.Board.Bullets.length > 0
         for bi in [0..GAME.Board.Bullets.length-1]
           b = GAME.Board.Bullets[bi]
@@ -424,7 +429,79 @@ jQuery ->
             GAME.Board.Data[x][y].ocupied.selected = true
       GAME.Player.Selected  = 0
 
+    draw_home= () ->
+      PS.BeadColor PS.ALL,PS.ALL, 0xffffff
+      PS.BeadBorderWidth PS.ALL,PS.ALL,0
+      PS.BeadGlyphColor PS.ALL,PS.ALL,0x000000
 
+      t = '♜ ASCii Wars ♜'
+      x = Math.floor(((G.GRID.WIDTH - t.length)) / 2)
+      for ti in t
+        PS.BeadGlyph x,1, ti
+        x += 1
+
+      t = 'Tutorial'
+      x = 3
+      for ti in t
+        PS.BeadGlyph x,3, ti
+        x += 1
+
+      PS.BeadBorderWidth 1,3,2
+      PS.BeadBorderColor 1,3,0x000000
+      PS.BeadData 1,3, (event) ->
+        if event == 'enter'
+          PS.BeadGlyph 1,3,'✔'
+        else if event == 'leave'
+          PS.BeadGlyph 1,3,' '
+        else if event == 'click'
+          G.Mode = 'tutorial'
+          PS.Init()
+
+      t = 'New Game'
+      x = 3
+      for ti in t
+        PS.BeadGlyph x,5, ti
+        x += 1
+
+      PS.BeadBorderWidth 1,5,2
+      PS.BeadBorderColor 1,5,0x000000
+      PS.BeadData 1,5, (event) ->
+        if event == 'enter'
+          PS.BeadGlyph 1,5,'✔'
+        else if event == 'leave'
+          PS.BeadGlyph 1,5,' '
+        else if event == 'click'
+          G.Mode = 'play'
+          PS.Init()
+
+
+
+
+    reset = () ->
+      TUT.current_step = 0
+      TUT.current_tip = 0
+      PS.StatusText TUT.tips[TUT.current_step].tip[TUT.current_tip]
+      TUT.current_tip = 1
+
+      GAME.Off_Set.x = 0
+      GAME.Off_Set.y = 0
+
+      GAME.Board.Width = Settings.Board.Width
+      GAME.Board.Height = Settings.Board.Height
+      GAME.Board.Data = []
+      GAME.Board.Bullets = []
+      GAME.Board.Shifting.x = 0
+      GAME.Board.Shifting.y = 0
+
+      GAME.Player.Credits = Settings.Player_Credits
+      GAME.Player.Credits = 12 if G.Mode == 'tutorial'
+      GAME.Player.Hover = 0
+      GAME.Player.Selected = 0
+      GAME.Player.Last.x = 0
+      GAME.Player.Last.y = 0
+
+      GAME.Comp.Credits = Settings.Comp_Credits
+      GAME.Comp.AI = new AI()
 
     debug = (response) ->
       property_names = ""
@@ -462,6 +539,22 @@ jQuery ->
         SHOOTING_FEQ: 15
       Tick: 0
       Mode: 'home'
+      Mode: 'home'
+    TUT =
+      current_step: 0
+      current_tip: 0
+      tips: [{tip: ['The bar at the bottom shows main game controls.','$ are used to build units.','⚒ units produce income.','To build one click on the icon then in the feild.','Units can only be built adjesent stationary alies.'],done: false},
+             {tip: ['♜ units are defencive and can not move.','Build one now.'],done: false},
+             {tip: ['♞ units are affencive and can move.','Build one now.'], done: false},
+             {tip: ['To move a ♞ click on it.','Then click where you want it to move.'], done: false}
+              {tip: ['Now that we know the basics defeate red','To build faster use a-♞, s-⚒,d-♜','click and drag to select multiple units'], done: false}
+            ]
+    Settings =
+      Board:
+        Width: 16
+        Height: 15
+      Player_Credits: 4
+      Comp_Credits: 4
     GAME =
       Off_Set:
         x: 0
@@ -486,15 +579,24 @@ jQuery ->
     PS.Init = ->
       PS.GridSize G.GRID.WIDTH, G.GRID.HEIGHT+1
       PS.BeadFlash PS.ALL,PS.ALL,false
+      PS.StatusFade false
       PS.StatusText 'ASCii Wars'
 
-      build_blank_board()
-      PS.Clock(1)
+      if G.Mode == 'home'
+        PS.Clock(0)
+        draw_home()
+      else
+        reset()
+        build_blank_board()
+        PS.Clock(1)
 
     PS.Click = (x, y, data) ->
       "use strict"
       if typeof data == "function"
-        data(x,y)
+        if G.Mode == 'home'
+          data('click')
+        else
+          data(x,y)
       else if GAME.Player.Hover != 0
         if y <= G.GRID.HEIGHT - 1
           if GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y].ocupied == 0
@@ -512,7 +614,18 @@ jQuery ->
                 PS.BeadFlashColor x,y,0xffffff
                 PS.BeadFlash x,y
                 PS.AudioPlay G.SOUNDS.PLACE_BUILDING
+                if G.Mode == 'tutorial'
+                  if TUT.current_step == 0 and GAME.Player.Hover.kind == 'p'
+                    TUT.current_step = 1
+                    TUT.current_tip = 0
+                  else if TUT.current_step == 1 and GAME.Player.Hover.kind == 'd'
+                    TUT.current_step = 2
+                    TUT.current_tip = 0
+                  else if TUT.current_step == 2 and GAME.Player.Hover.kind == 'a'
+                    TUT.current_step = 3
+                    TUT.current_tip = 0
                 GAME.Player.Hover = 0
+
         else
           GAME.Player.Hover = 0
       else if y <= G.GRID.HEIGHT - 1
@@ -534,6 +647,15 @@ jQuery ->
                 GAME.Board.Data[x][y].ocupied.dest = {x: GAME.Player.Selected.x,y: GAME.Player.Selected.y}
                 moved += 1
           if moved > 0
+            if G.Mode == 'tutorial'
+              if TUT.current_step == 3
+                TUT.current_step = 4
+                TUT.current_tip = 0
+                GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-4,'p','comp')
+                GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-4,'p','comp')
+                GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-3].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-3,'p','comp')
+                GAME.Board.Data[GAME.Board.Width-5][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-5,GAME.Board.Height-5,'d','comp')
+                GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-5,'d','comp')
             deselect()
           else
             select()
@@ -542,6 +664,9 @@ jQuery ->
 
     PS.Enter = (xx, yy, data) ->
       "use strict"
+      if typeof data == "function"
+        if G.Mode == 'home'
+          data('enter')
       GAME.Player.Last.x = xx
       GAME.Player.Last.y = yy
 
@@ -582,6 +707,9 @@ jQuery ->
 
     PS.Leave = (x, y, data) ->
       "use strict"
+      if typeof data == "function"
+        if G.Mode == 'home'
+          data('leave')
 
     PS.KeyDown = (key, shift, ctrl) ->
       "use strict"
@@ -621,7 +749,12 @@ jQuery ->
           for y in [GAME.Player.Selected.y..GAME.Player.Selected.h]
             PS.BeadBorderColor x+GAME.Off_Set.x,y+GAME.Off_Set.y,0x00ffff
             PS.BeadBorderWidth x+GAME.Off_Set.x,y+GAME.Off_Set.y,2
-      GAME.Comp.AI.think()
+      GAME.Comp.AI.think() if G.Mode == 'play'
+
+      if G.Mode == 'tutorial'
+        if G.Tick % 120 == 0
+          PS.StatusText TUT.tips[TUT.current_step].tip[TUT.current_tip]
+          TUT.current_tip = (TUT.current_tip+1)% TUT.tips[TUT.current_step].tip.length
 
 
 
