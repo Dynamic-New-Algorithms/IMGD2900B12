@@ -1,0 +1,2 @@
+module AsciiaiHelper
+end

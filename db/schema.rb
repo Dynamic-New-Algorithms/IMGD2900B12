@@ -11,7 +11,19 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20121028235536) do
+ActiveRecord::Schema.define(:version => 20121113204143) do
+
+  create_table "asciiais", :force => true do |t|
+    t.float    "ir_a"
+    t.float    "ir_d"
+    t.float    "ir_p"
+    t.integer  "min_p"
+    t.integer  "attack_timing"
+    t.integer  "games_played"
+    t.integer  "wins"
+    t.datetime "created_at",    :null => false
+    t.datetime "updated_at",    :null => false
+  end
 
   create_table "ldhs", :force => true do |t|
     t.string   "name"

@@ -231,15 +231,40 @@ jQuery ->
 
     class AI
       constructor: () ->
-        p = Math.random()
-        d = (Math.random()*(1-p))
-        a = 1 - p - d
+
+
+        url = "/asciiai/get"
+        json = 'nothing'
+        $.ajax
+          async: false
+          global: false
+          #data: {name: player_name, points: score, difficulty: Math.floor(1000*dificulty)}
+          url: url
+          dataType: "json"
+          success: (d) ->
+            json = d
+        debug(json)
+        p = json.ir_p
+        d = json.ir_d
+        a = json.ir_a
+        @id = json.id
+        @min_p = json.min_p
         @next_build = {p: p,d: d,a: a}
-        @attack_feq = Math.floor(Math.random()*18000)
+        @attack_feq = json.attack_timing
+
+      report: (win) ->
+        url = "/asciiai/update"
+        json = 'nothing'
+        $.ajax
+          async: false
+          global: false
+          data: {id: @id, win: win}
+          url: url
+          dataType: "json"
 
       think: () ->
         force_attack = false
-        if GAME.Comp.Credits >= 3
+        if GAME.Comp.Credits >= 2
           their_a = 0
           their_d = 0
           their_p = 0
@@ -269,7 +294,7 @@ jQuery ->
             nb = 'p'
             nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p
             nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a
-            nb = 'p' if my_p <= 5
+            nb = 'p' if my_p <= @min_p
             GAME.Comp.Credits -= 1
             GAME.Comp.Credits -= 1 if nb == 'a'
             loc = options[Math.floor(Math.random()*options.length)]
@@ -334,11 +359,13 @@ jQuery ->
         if player_unit_count == 0
           PS.Clock 0
           alert 'Loser'
+          GAME.Comp.AI.report(1) if G.Mode == 'play'
           G.Mode = 'home'
           PS.Init()
         if comp_unit_count == 0
           PS.Clock 0
           alert 'Winner'
+          GAME.Comp.AI.report(0) if G.Mode == 'play'
           G.Mode = 'home'
           PS.Init()
       if GAME.Board.Bullets.length > 0
@@ -801,7 +828,7 @@ jQuery ->
       GAME.Comp.AI.think() if G.Mode == 'play'
 
       if G.Mode == 'tutorial'
-        if G.Tick % 120 == 0
+        if G.Tick % 60 == 0
           PS.StatusText TUT.tips[TUT.current_step].tip[TUT.current_tip]
           TUT.current_tip = (TUT.current_tip+1)% TUT.tips[TUT.current_step].tip.length
 

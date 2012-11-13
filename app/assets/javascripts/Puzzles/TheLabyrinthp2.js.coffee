@@ -590,25 +590,7 @@ jQuery ->
       if G.Tick >= 3600
         G.Tick = 0
 
-      ###play music###
-      if G.Tick % 15 == 0 and G.Music_Playing
-        last_note = G.Music
-        key = last_note[0]*12 + last_note[1]
-        go = 1
-        go = -1 if Math.random()*(last_note[0]-1) > Math.random()*(7-last_note[0])
-        note = (key - 12*Math.floor(key/12))
-        scale = [0-note,2-note,3-note,5-note,6-note,8-note,11-note,12-note]
-        key = key + (go * scale[Math.floor(Math.random()*scale.length)])
-        key = Math.max(9,Math.min(97,key))
-        key = [Math.floor(key/12),(key - 12*Math.floor(key/12))]
-        PS.AudioLoad(DNA_MUSIC.Piano[key[0]][key[1]])
-        chanle = PS.AudioPlay DNA_MUSIC.Piano[key[0]][key[1]]
-        unless chanle in G.Music_queue
-          G.Music_queue.push(chanle)
-        if G.Music_queue.length > 10
-          PS.AudioStop(G.Music_queue[0])
-          G.Music_queue.splice(0,1)
-        G.Music = key
+
       ###change status###
       if G.Tick % G.STATUS.CYCLE == 0
         G.STATUS.Current = (G.STATUS.Current+1) % G.STATUS.Values.length
