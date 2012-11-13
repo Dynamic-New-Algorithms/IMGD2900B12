@@ -396,21 +396,21 @@ jQuery ->
       PS.BeadGlyph 2,G.GRID.HEIGHT, String(Math.floor((c - Math.floor(c/100)*100) / 10))
       PS.BeadGlyph 3,G.GRID.HEIGHT, String(Math.floor(c) - (Math.floor((c - Math.floor(c/100)*100) / 10))*10 - Math.floor(c/100)*100)
 
-      PS.BeadGlyph G.GRID.WIDTH-8,G.GRID.HEIGHT, '1'
-      PS.BeadGlyph G.GRID.WIDTH-7,G.GRID.HEIGHT, '⚒'
-      PS.BeadData G.GRID.WIDTH-7,G.GRID.HEIGHT, (x,y) ->
+      PS.BeadGlyph G.GRID.WIDTH-5,G.GRID.HEIGHT, '1'
+      PS.BeadGlyph G.GRID.WIDTH-4,G.GRID.HEIGHT, '⚒'
+      PS.BeadData G.GRID.WIDTH-4,G.GRID.HEIGHT, (x,y) ->
         deselect()
         GAME.Player.Hover = new unit(x+GAME.Off_Set.x,y+GAME.Off_Set.y,'p','player')
         GAME.Player.Hover.hover = true
-      PS.BeadGlyph G.GRID.WIDTH-5,G.GRID.HEIGHT, '1'
-      PS.BeadGlyph G.GRID.WIDTH-4,G.GRID.HEIGHT, '♜'
-      PS.BeadData G.GRID.WIDTH-4,G.GRID.HEIGHT, (x,y) ->
+      PS.BeadGlyph G.GRID.WIDTH-2,G.GRID.HEIGHT, '1'
+      PS.BeadGlyph G.GRID.WIDTH-1,G.GRID.HEIGHT, '♜'
+      PS.BeadData G.GRID.WIDTH-1,G.GRID.HEIGHT, (x,y) ->
         deselect()
         GAME.Player.Hover = new unit(x+GAME.Off_Set.x,y+GAME.Off_Set.y,'d','player')
         GAME.Player.Hover.hover = true
-      PS.BeadGlyph G.GRID.WIDTH-2,G.GRID.HEIGHT, '2'
-      PS.BeadGlyph G.GRID.WIDTH-1,G.GRID.HEIGHT, '♞'
-      PS.BeadData G.GRID.WIDTH-1,G.GRID.HEIGHT, (x,y) ->
+      PS.BeadGlyph G.GRID.WIDTH-8,G.GRID.HEIGHT, '2'
+      PS.BeadGlyph G.GRID.WIDTH-7,G.GRID.HEIGHT, '♞'
+      PS.BeadData G.GRID.WIDTH-7,G.GRID.HEIGHT, (x,y) ->
         deselect()
         GAME.Player.Hover = new unit(x+GAME.Off_Set.x,y+GAME.Off_Set.y,'a','player')
         GAME.Player.Hover.hover = true
@@ -554,7 +554,7 @@ jQuery ->
         Width: 16
         Height: 15
       Player_Credits: 4
-      Comp_Credits: 4
+      Comp_Credits: 5
     GAME =
       Off_Set:
         x: 0
@@ -715,13 +715,13 @@ jQuery ->
       "use strict"
       if key == 27
         deselect()
-      else if key == 65
+      else if key == 68
         PS.Click G.GRID.WIDTH-1,G.GRID.HEIGHT,PS.BeadData G.GRID.WIDTH-1,G.GRID.HEIGHT
         PS.Enter GAME.Player.Last.x,GAME.Player.Last.y
-      else if key == 83
+      else if key == 65
         PS.Click G.GRID.WIDTH-7,G.GRID.HEIGHT,PS.BeadData G.GRID.WIDTH-7,G.GRID.HEIGHT
         PS.Enter GAME.Player.Last.x,GAME.Player.Last.y
-      else if key == 68
+      else if key == 83
         PS.Click G.GRID.WIDTH-4,G.GRID.HEIGHT,PS.BeadData G.GRID.WIDTH-4,G.GRID.HEIGHT
         PS.Enter GAME.Player.Last.x,GAME.Player.Last.y
 
