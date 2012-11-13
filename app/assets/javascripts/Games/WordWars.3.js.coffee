@@ -243,7 +243,6 @@ jQuery ->
           dataType: "json"
           success: (d) ->
             json = d
-        debug(json)
         p = json.ir_p
         d = json.ir_d
         a = json.ir_a
