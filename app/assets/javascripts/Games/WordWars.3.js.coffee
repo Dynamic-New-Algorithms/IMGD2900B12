@@ -473,6 +473,54 @@ jQuery ->
         else if event == 'click'
           G.Mode = 'play'
           PS.Init()
+      t = 'Bank'
+      x = 3
+      for ti in t
+        PS.BeadGlyph x,6, ti
+        x += 1
+      PS.BeadBorderWidth x,6,2
+      PS.BeadBorderColor x,6,0x000000
+      PS.BeadGlyph x,6,'◀'
+      PS.BeadData x,6, (event) ->
+        if event == 'click'
+          Settings.Player_Credits = Math.max(1,Settings.Player_Credits-1)
+          draw_home()
+      x += 1
+      PS.BeadBorderWidth x,6,2
+      PS.BeadBorderColor x,6,0x000000
+      PS.BeadGlyph x,6,String(Settings.Player_Credits)
+      x += 1
+      PS.BeadBorderWidth x,6,2
+      PS.BeadBorderColor x,6,0x000000
+      PS.BeadGlyph x,6,'▶'
+      PS.BeadData x,6, (event) ->
+        if event == 'click'
+          Settings.Player_Credits = Math.min(9,Settings.Player_Credits+1)
+          draw_home()
+      t = 'Dificulty'
+      x = 3
+      for ti in t
+        PS.BeadGlyph x,7, ti
+        x += 1
+      PS.BeadBorderWidth x,7,2
+      PS.BeadBorderColor x,7,0x000000
+      PS.BeadGlyph x,7,'◀'
+      PS.BeadData x,7, (event) ->
+        if event == 'click'
+          Settings.Comp_Credits = Math.max(0,Settings.Comp_Credits-1)
+          draw_home()
+      x += 1
+      PS.BeadBorderWidth x,7,2
+      PS.BeadBorderColor x,7,0x000000
+      PS.BeadGlyph x,7,String(Settings.Comp_Credits)
+      x += 1
+      PS.BeadBorderWidth x,7,2
+      PS.BeadBorderColor x,7,0x000000
+      PS.BeadGlyph x,7,'▶'
+      PS.BeadData x,7, (event) ->
+        if event == 'click'
+          Settings.Comp_Credits = Math.min(9,Settings.Comp_Credits+1)
+          draw_home()
 
 
 
@@ -500,7 +548,7 @@ jQuery ->
       GAME.Player.Last.x = 0
       GAME.Player.Last.y = 0
 
-      GAME.Comp.Credits = Settings.Comp_Credits
+      GAME.Comp.Credits = Settings.Comp_Credits + Settings.Player_Credits
       GAME.Comp.AI = new AI()
 
     debug = (response) ->
@@ -554,7 +602,7 @@ jQuery ->
         Width: 16
         Height: 15
       Player_Credits: 4
-      Comp_Credits: 5
+      Comp_Credits: 2
     GAME =
       Off_Set:
         x: 0
@@ -587,6 +635,7 @@ jQuery ->
         draw_home()
       else
         reset()
+        PS.StatusText 'ASCii Wars' if G.Mode != 'tutorial'
         build_blank_board()
         PS.Clock(1)
 
