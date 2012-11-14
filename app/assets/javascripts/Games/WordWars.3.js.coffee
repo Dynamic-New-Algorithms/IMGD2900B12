@@ -62,8 +62,6 @@ jQuery ->
           PS.BeadGlyph x,y, '♜' if @kind == 'd'
           PS.BeadGlyph x,y, '⚒' if @kind == 'p'
           PS.BeadGlyph x,y, '♞' if @kind == 'a'
-
-
       shoot: () ->
         if @last_shot + G.BALANCE.SHOOTING_FEQ < G.Tick or G.Tick < @last_shot
           for y in [0..G.BALANCE.BULLET.LIFE]
@@ -178,13 +176,13 @@ jQuery ->
               east = -1
               west = -1
               if within_Board(x,y-1)
-                north = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y-1)) + m + 1 if (GAME.Board.Data[x][y-1].ocupied == 0)# or GAME.Board.Data[x][y-1].ocupied.player != @player)
+                north = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y-1)) + m + 1 if (GAME.Board.Data[x][y-1].ocupied == 0) or (GAME.Board.Data[x][y-1].ocupied.player != @player and GAME.Board.Data[x][y-1].ocupied.player != 'world')
               if within_Board(x,y+1)
-                south = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y+1)) + m + 1 if (GAME.Board.Data[x][y+1].ocupied == 0)# or GAME.Board.Data[x][y+1].ocupied.player != @player)
+                south = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y+1)) + m + 1 if (GAME.Board.Data[x][y+1].ocupied == 0) or (GAME.Board.Data[x][y+1].ocupied.player != @player and GAME.Board.Data[x][y+1].ocupied.player != 'world')
               if within_Board(x+1,y)
-                east = Math.abs(@dest.x - (x+1)) + Math.abs(@dest.y - y) + m + 1 if (GAME.Board.Data[x+1][y].ocupied == 0)# or GAME.Board.Data[x+1][y].ocupied.player != @player)
+                east = Math.abs(@dest.x - (x+1)) + Math.abs(@dest.y - y) + m + 1 if (GAME.Board.Data[x+1][y].ocupied == 0) or (GAME.Board.Data[x+1][y].ocupied.player != @player and GAME.Board.Data[x+1][y].ocupied.player != 'world')
               if within_Board(x-1,y)
-                west = Math.abs(@dest.x - (x-1)) + Math.abs(@dest.y - y) + m + 1 if (GAME.Board.Data[x-1][y].ocupied == 0)# or GAME.Board.Data[x-1][y].ocupied.player != @player)
+                west = Math.abs(@dest.x - (x-1)) + Math.abs(@dest.y - y) + m + 1 if (GAME.Board.Data[x-1][y].ocupied == 0) or (GAME.Board.Data[x-1][y].ocupied.player != @player and GAME.Board.Data[x-1][y].ocupied.player != 'world')
 
               apple[String(x+','+(y-1))] = {v: north, moves: m+1,history: hi+'n',explored: false} if north != -1 and (apple[String(x+','+(y-1))] is undefined or apple[String(x+','+(y-1))].v > north )
               apple[String(x+','+(y+1))] = {v: south, moves: m+1,history: hi+'s',explored: false} if south != -1 and (apple[String(x+','+(y+1))] is undefined or apple[String(x+','+(y+1))].v > south )
