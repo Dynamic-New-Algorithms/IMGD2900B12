@@ -25,10 +25,20 @@ jQuery ->
           x = @x - GAME.Off_Set.x
           y = @y - GAME.Off_Set.y
 
-          test_a = @x - 1 >= 0 and GAME.Board.Data[@x - 1][@y].ocupied != 0 and GAME.Board.Data[@x - 1][@y].ocupied.player == 'player' and GAME.Board.Data[@x - 1][@y].ocupied.kind != 'a'
-          test_b = @x+1 <= GAME.Board.Width and GAME.Board.Data[@x + 1][@y].ocupied != 0  and GAME.Board.Data[@x + 1][@y].ocupied.player == 'player' and GAME.Board.Data[@x + 1][@y].ocupied.kind != 'a'
-          test_c = @y - 1 >= 0 and GAME.Board.Data[@x][@y - 1].ocupied != 0  and GAME.Board.Data[@x][@y - 1].ocupied.player == 'player' and GAME.Board.Data[@x][@y - 1].ocupied.kind != 'a'
-          test_d = @y+1 <= GAME.Board.Height and GAME.Board.Data[@x][@y + 1].ocupied != 0 and GAME.Board.Data[@x][@y + 1].ocupied.player == 'player' and GAME.Board.Data[@x][@y + 1].ocupied.kind != 'a'
+          test_a = false
+          test_b = false
+          test_c = false
+          test_d = false
+          if @kind == 'a'
+            test_a = @x - 1 >= 0 and GAME.Board.Data[@x - 1][@y].ocupied != 0 and GAME.Board.Data[@x - 1][@y].ocupied.player == 'player' and GAME.Board.Data[@x - 1][@y].ocupied.kind != 'a'
+            test_b = @x+1 <= GAME.Board.Width and GAME.Board.Data[@x + 1][@y].ocupied != 0  and GAME.Board.Data[@x + 1][@y].ocupied.player == 'player' and GAME.Board.Data[@x + 1][@y].ocupied.kind != 'a'
+            test_c = @y - 1 >= 0 and GAME.Board.Data[@x][@y - 1].ocupied != 0  and GAME.Board.Data[@x][@y - 1].ocupied.player == 'player' and GAME.Board.Data[@x][@y - 1].ocupied.kind != 'a'
+            test_d = @y+1 <= GAME.Board.Height and GAME.Board.Data[@x][@y + 1].ocupied != 0 and GAME.Board.Data[@x][@y + 1].ocupied.player == 'player' and GAME.Board.Data[@x][@y + 1].ocupied.kind != 'a'
+          else
+            test_a = @x - 1 >= 0 and GAME.Board.Data[@x - 1][@y].ocupied != 0 and GAME.Board.Data[@x - 1][@y].ocupied.player == 'player'
+            test_b = @x+1 <= GAME.Board.Width and GAME.Board.Data[@x + 1][@y].ocupied != 0  and GAME.Board.Data[@x + 1][@y].ocupied.player == 'player'
+            test_c = @y - 1 >= 0 and GAME.Board.Data[@x][@y - 1].ocupied != 0  and GAME.Board.Data[@x][@y - 1].ocupied.player == 'player'
+            test_d = @y+1 <= GAME.Board.Height and GAME.Board.Data[@x][@y + 1].ocupied != 0 and GAME.Board.Data[@x][@y + 1].ocupied.player == 'player'
 
           PS.BeadColor x,y, G.COLORS.UNIT.HOVER_OK if @hover
           PS.BeadColor x,y, G.COLORS.UNIT.HOVER_GOOD if @hover and GAME.Board.Data[@x][@y].ocupied == 0 and (test_a or test_b or test_c or test_d)
@@ -130,7 +140,6 @@ jQuery ->
               GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
       move: () ->
-        
         if @kind == 'p'
           GAME.Player.Credits += G.BALANCE.PRODUCTION_RATE  if @player == 'player'
           GAME.Comp.Credits += G.BALANCE.PRODUCTION_RATE  if @player == 'comp'
@@ -317,7 +326,7 @@ jQuery ->
       constructor: (x,y,color,life) ->
         @x = x
         @y = y
-        @color = color
+        @color = {r: color.r,g: color.g, b: color.b}
         @life = life
 
       draw: () ->
@@ -329,9 +338,9 @@ jQuery ->
 
       move: () ->
         base_color = GAME.Board.Data[@x][@y].color
-        @color.r = Math.floor((@color.r + base_color.r) / 2.0)
-        @color.g = Math.floor((@color.g + base_color.r) / 2.0)
-        @color.b = Math.floor((@color.b + base_color.r) / 2.0)
+        @color.r = Math.max(Math.floor(@color.r*0.9),base_color.r)
+        @color.g = Math.max(Math.floor(@color.g*0.9),base_color.g)
+        @color.b = Math.max(Math.floor(@color.b*0.9),base_color.b)
         @life -= 1
 
 
@@ -378,7 +387,6 @@ jQuery ->
           options = []
           for x in [GAME.Board.Width..0]
             for y in [GAME.Board.Height..0]
-
               test_a = x - 1 >= 0 and GAME.Board.Data[x - 1][y].ocupied != 0 and GAME.Board.Data[x - 1][y].ocupied.player == 'comp' and GAME.Board.Data[x - 1][y].ocupied.kind != 'a'
               test_b = x+1 <= GAME.Board.Width and GAME.Board.Data[x + 1][y].ocupied != 0  and GAME.Board.Data[x + 1][y].ocupied.player == 'comp' and GAME.Board.Data[x + 1][y].ocupied.kind != 'a'
               test_c = y - 1 >= 0 and GAME.Board.Data[x][y - 1].ocupied != 0  and GAME.Board.Data[x][y - 1].ocupied.player == 'comp' and GAME.Board.Data[x][y - 1].ocupied.kind != 'a'
@@ -396,8 +404,8 @@ jQuery ->
                 my_a += 1 if GAME.Board.Data[x][y].ocupied.kind == 'a'
           if options.length > 0
             nb = 'p'
-            nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p or (their_a+their_d+their_p == 1)
-            nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a
+            nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p and my_a / (my_a+my_d+my_p) < @next_build.a
+            nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a and my_d / (my_a+my_d+my_p) < @next_build.d
             nb = 'p' if my_p <= @min_p
             GAME.Comp.Credits -= 1
             GAME.Comp.Credits -= 1 if nb == 'a'
@@ -406,7 +414,7 @@ jQuery ->
             nb.dest.x = loc.x
             nb.dest.y = loc.y
             GAME.Board.Data[nb.x][nb.y].ocupied = nb
-            force_attack = true if my_a / (my_a+my_d+my_p) > @next_build.a
+            force_attack = true if my_a / (my_a+my_d+my_p) > @next_build.a or (their_a+their_d+their_p) < my_a
         if G.Tick % @attack_feq == 0 or force_attack
           move_op = []
           my_a = []
@@ -604,8 +612,9 @@ jQuery ->
 
       if GAME.Board.Flashes.length > 0
         for f in GAME.Board.Flashes
-          f.draw()
-          f.move()
+          if f.life >= 0
+            f.draw()
+            f.move()
 
       if GAME.Board.Flashes.length > 0
         removed = 0
@@ -972,7 +981,7 @@ jQuery ->
         Lakes: false
       Player_Credits: 4
       Comp_Credits: 2
-      Map: 'Custom'
+      Map: 'Great_Lake'
     GAME =
       Off_Set:
         x: 0
@@ -1038,6 +1047,46 @@ jQuery ->
           ([0,0,0,0,0,0,0,0,2,2,2,0,0,0,0,0]),
           ([0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0])
         ]
+      Zig_Zag: #name of level (_ instead of Space) limit 10 characters
+        w: 15 #needs to be one less than actual  (or start cound at 0)
+        h: 14
+        data: [  #1 => water,2 => rock, 0 => grass, b => blue start, r => red start red gets a D up and to the left one
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([0,b,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([0,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,r,0]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+        ]
+      The_Island: #name of level (_ instead of Space) limit 10 characters
+        w: 15 #needs to be one less than actual  (or start cound at 0)
+        h: 14
+        data: [  #1 => water,2 => rock, 0 => grass, b => blue start, r => red start red gets a D up and to the left one
+          ([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]),
+          ([1,1,1,1,1,0,0,1,1,0,0,0,1,1,1,1]),
+          ([1,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1]),
+          ([1,1,0,0,0,0,0,0,1,0,0,0,0,1,1,1]),
+          ([1,1,0,0,b,0,0,0,0,0,0,0,0,1,0,1]),
+          ([1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1]),
+          ([1,0,0,0,0,0,0,0,2,0,0,0,0,0,1,1]),
+          ([1,1,0,0,0,0,0,0,2,2,0,0,0,0,0,1]),
+          ([1,1,1,0,0,0,0,2,2,0,0,0,0,0,0,1]),
+          ([1,1,1,0,0,0,2,2,0,0,0,0,0,0,0,1]),
+          ([1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1]),
+          ([1,1,1,1,1,0,0,0,0,0,0,r,0,0,1,1]),
+          ([1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1]),
+          ([1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1]),
+          ([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
+        ]
 
     ###------------------------------------------ PS Events ----------------------------------------- ###
     PS.Init = ->
@@ -1069,6 +1118,11 @@ jQuery ->
             test_b = GAME.Player.Hover.x+1 <= GAME.Board.Width and GAME.Board.Data[GAME.Player.Hover.x + 1][GAME.Player.Hover.y].ocupied != 0  and GAME.Board.Data[GAME.Player.Hover.x + 1][GAME.Player.Hover.y].ocupied.player == 'player' and GAME.Board.Data[GAME.Player.Hover.x + 1][GAME.Player.Hover.y].ocupied.kind != 'a'
             test_c = GAME.Player.Hover.y - 1 >= 0 and GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y - 1].ocupied != 0  and GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y - 1].ocupied.player == 'player' and GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y - 1].ocupied.kind != 'a'
             test_d = GAME.Player.Hover.y+1 <= GAME.Board.Height and GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y + 1].ocupied != 0 and GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y + 1].ocupied.player == 'player' and GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y + 1].ocupied.kind != 'a'
+            if GAME.Player.Hover.kind != 'a'
+              test_a = GAME.Player.Hover.x - 1 >= 0 and GAME.Board.Data[GAME.Player.Hover.x - 1][GAME.Player.Hover.y].ocupied != 0 and GAME.Board.Data[GAME.Player.Hover.x - 1][GAME.Player.Hover.y].ocupied.player == 'player'
+              test_b = GAME.Player.Hover.x+1 <= GAME.Board.Width and GAME.Board.Data[GAME.Player.Hover.x + 1][GAME.Player.Hover.y].ocupied != 0  and GAME.Board.Data[GAME.Player.Hover.x + 1][GAME.Player.Hover.y].ocupied.player == 'player'
+              test_c = GAME.Player.Hover.y - 1 >= 0 and GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y - 1].ocupied != 0  and GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y - 1].ocupied.player == 'player'
+              test_d = GAME.Player.Hover.y+1 <= GAME.Board.Height and GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y + 1].ocupied != 0 and GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y + 1].ocupied.player == 'player'
             if test_a or test_b or test_c or test_d
               if (GAME.Player.Credits >= 1 and GAME.Player.Hover.kind != 'a') or GAME.Player.Credits >= 2
                 GAME.Player.Credits -= 1
