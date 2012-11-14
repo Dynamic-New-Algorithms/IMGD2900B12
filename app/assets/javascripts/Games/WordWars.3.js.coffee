@@ -361,6 +361,8 @@ jQuery ->
         @min_p = json.min_p
         @next_build = {p: p,d: d,a: a}
         @attack_feq = json.attack_timing
+        @last_p_count = 0
+        @last_d_cound = 0
 
       report: (win) ->
         win = 0 if G.Tick < 600
@@ -412,7 +414,9 @@ jQuery ->
             nb.dest.x = loc.x
             nb.dest.y = loc.y
             GAME.Board.Data[nb.x][nb.y].ocupied = nb
-            force_attack = true if my_a / (my_a+my_d+my_p) > @next_build.a or (their_a+their_d+their_p) < my_a
+            force_attack = true if my_a / (my_a+my_d+my_p) > @next_build.a or (their_a+their_d+their_p) < my_a or my_p < @last_p_count or my_d < @last_d_count
+            @last_p_count = my_p
+            @last_d_count = my_d
         if G.Tick % @attack_feq == 0 or force_attack
           move_op = []
           my_a = []
