@@ -287,7 +287,7 @@ jQuery ->
       move:() ->
         @has_moved = true
         @life -= 1
-        if @x + @vx >=0 and @x + @vx < GAME.Board.Width and @y + @vy >=0 and @y + @vy < GAME.Board.Height
+        if within_Board(@x+@vx,@y+@vy)
           @x += @vx
           @y += @vy
           return GAME.Board.Data[@x][@y].ocupied != 0
