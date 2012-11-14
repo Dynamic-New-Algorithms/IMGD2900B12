@@ -50,6 +50,7 @@ jQuery ->
               GAME.Board.Bullets.push(new bullet(@x,@y,0,1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
+              GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
 
           for y in [0..G.BALANCE.BULLET.LIFE]
@@ -58,6 +59,7 @@ jQuery ->
               GAME.Board.Bullets.push(new bullet(@x,@y,0,-1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
+              GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
             break if @x-x < 0
@@ -65,6 +67,7 @@ jQuery ->
               GAME.Board.Bullets.push(new bullet(@x,@y,-1,0,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
+              GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
             break if @x+x > GAME.Board.Width
@@ -72,6 +75,7 @@ jQuery ->
               GAME.Board.Bullets.push(new bullet(@x,@y,1,0,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
+              GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
             break if @x+x > GAME.Board.Width or @y+x > GAME.Board.Height
@@ -79,6 +83,7 @@ jQuery ->
               GAME.Board.Bullets.push(new bullet(@x,@y,1,1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
+              GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
             break if @x-x < 0 or @y-x < 0
@@ -86,6 +91,7 @@ jQuery ->
               GAME.Board.Bullets.push(new bullet(@x,@y,-1,-1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
+              GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
             break if @x-x <0  or @y+x > GAME.Board.Height
@@ -93,6 +99,7 @@ jQuery ->
               GAME.Board.Bullets.push(new bullet(@x,@y,-1,1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
+              GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
             break if @x+x > GAME.Board.Width or @y-x < 0
@@ -100,6 +107,7 @@ jQuery ->
               GAME.Board.Bullets.push(new bullet(@x,@y,1,-1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
+              GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
       move: () ->
         if @kind == 'p'
@@ -228,6 +236,27 @@ jQuery ->
           return GAME.Board.Data[@x][@y].ocupied != 0
         else
           return true
+    class flash
+      constructor: (x,y,color,life) ->
+        @x = x
+        @y = y
+        @color = color
+        @life = life
+
+      draw: () ->
+        if @x - GAME.Off_Set.x >= 0 and  @x - GAME.Off_Set.x < G.GRID.WIDTH and @y - GAME.Off_Set.y >= 0 and  @y - GAME.Off_Set.y < G.GRID.HEIGHT
+          x = @x - GAME.Off_Set.x
+          y = @y - GAME.Off_Set.y
+
+          PS.BeadColor x,y,@color
+
+      move: () ->
+        base_color = GAME.Board.Data[@x][@y].color
+        @color.r = Math.floor((@color.r + base_color.r) / 2.0)
+        @color.g = Math.floor((@color.g + base_color.r) / 2.0)
+        @color.b = Math.floor((@color.b + base_color.r) / 2.0)
+        @life -= 1
+
 
     class AI
       constructor: () ->
@@ -323,6 +352,18 @@ jQuery ->
 
 
     ###------------------------------------------ Helper functions ----------------------------------------- ###
+    build_die_flash_color = () ->
+      a = Math.random()
+      b = Math.random()*(1-a)
+      c = (1-a-b)
+      p = [a,b,c]
+      color = PS.UnmakeRGB 0x000000
+      for i in [0..2]
+        co = PS.UnmakeRGB G.COLORS.FLASH.DIE[i]
+        color.r += Math.floor(co.r * p[i])
+        color.g += Math.floor(co.g * p[i])
+        color.b += Math.floor(co.b * p[i])
+      return color
     build_blank_board = () ->
       GAME.Board.Data = []
       for x in [0..GAME.Board.Width]
@@ -378,9 +419,11 @@ jQuery ->
                   if Math.random() <= G.BALANCE.BULLET.SUCCESS_RATE
                     GAME.Board.Data[b.x][b.y].ocupied = 0
                     PS.AudioPlay G.SOUNDS.DIE
+                    GAME.Board.Flashes.push(new flash(b.x,b.y,build_die_flash_color(),G.BALANCE.FLASH.DIE))
                     b.life = -1
               else
                 b.life = -1
+
 
       if GAME.Board.Bullets.length > 0
         removed = 0
@@ -409,6 +452,19 @@ jQuery ->
         for b in GAME.Board.Bullets
           if GAME.Board.Data[b.x][b.y].ocupied == 0
             b.draw()
+
+      if GAME.Board.Flashes.length > 0
+        for f in GAME.Board.Flashes
+          f.draw()
+          f.move()
+
+      if GAME.Board.Flashes.length > 0
+        removed = 0
+        for fi in [0..GAME.Board.Flashes.length]
+          if (fi-removed) < GAME.Board.Flashes.length
+            if GAME.Board.Flashes[fi-removed].life <= 0
+              GAME.Board.Flashes.splice(fi-removed,1)
+              removed += 1
 
       if GAME.Player.Hover != 0
         GAME.Player.Hover.draw()
@@ -483,7 +539,7 @@ jQuery ->
           G.Mode = 'tutorial'
           PS.Init()
 
-      t = 'New Game'
+      t = 'New GAME'
       x = 3
       for ti in t
         PS.BeadGlyph x,5, ti
@@ -564,6 +620,7 @@ jQuery ->
       GAME.Board.Height = Settings.Board.Height
       GAME.Board.Data = []
       GAME.Board.Bullets = []
+      GAME.Board.Flashes = []
       GAME.Board.Shifting.x = 0
       GAME.Board.Shifting.y = 0
 
@@ -600,6 +657,10 @@ jQuery ->
           COMP: 0xff0000
         BATTLE_GROUND:
           BG: ([0x557F50,0x8A661E,0x41700F])
+        FLASH:
+          DIE: ([0x770000,0xa30000,0xff6800,0xfd9f09,0xb50700])
+          SHOOT: {r: 255,g: 255,b: 255}
+
       SOUNDS:
         PLACE_BUILDING: 'fx_gun'
         SHOOT: 'fx_bang'
@@ -611,8 +672,10 @@ jQuery ->
           SUCCESS_RATE: 0.5
         PRODUCTION_RATE: 0.01
         SHOOTING_FEQ: 15
+        FLASH:
+          DIE: 5
+          SHOOT: 2
       Tick: 0
-      Mode: 'home'
       Mode: 'home'
     TUT =
       current_step: 0
@@ -638,6 +701,7 @@ jQuery ->
         Height: 15
         Data: []
         Bullets: []
+        Flashes: []
         Shifting:
           x: 0
           y: 0
