@@ -377,7 +377,7 @@ jQuery ->
 
       think: () ->
         force_attack = false
-        if GAME.Comp.Credits >= 2
+        if GAME.Comp.Credits >= 2 or G.Tick % 15 == 0
           their_a = 0
           their_d = 0
           their_p = 0
@@ -403,17 +403,18 @@ jQuery ->
                 my_d += 1 if GAME.Board.Data[x][y].ocupied.kind == 'd'
                 my_a += 1 if GAME.Board.Data[x][y].ocupied.kind == 'a'
           if options.length > 0
-            nb = 'p'
-            nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p and my_a / (my_a+my_d+my_p) < @next_build.a
-            nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a and my_d / (my_a+my_d+my_p) < @next_build.d
-            nb = 'p' if my_p <= @min_p
-            GAME.Comp.Credits -= 1
-            GAME.Comp.Credits -= 1 if nb == 'a'
-            loc = options[Math.floor(Math.random()*options.length)]
-            nb = new unit(loc.x,loc.y,nb,'comp')
-            nb.dest.x = loc.x
-            nb.dest.y = loc.y
-            GAME.Board.Data[nb.x][nb.y].ocupied = nb
+            if GAME.Comp.Credits >= 2
+              nb = 'p'
+              nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p and my_a / (my_a+my_d+my_p) < @next_build.a
+              nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a and my_d / (my_a+my_d+my_p) < @next_build.d
+              nb = 'p' if my_p <= @min_p
+              GAME.Comp.Credits -= 1
+              GAME.Comp.Credits -= 1 if nb == 'a'
+              loc = options[Math.floor(Math.random()*options.length)]
+              nb = new unit(loc.x,loc.y,nb,'comp')
+              nb.dest.x = loc.x
+              nb.dest.y = loc.y
+              GAME.Board.Data[nb.x][nb.y].ocupied = nb
             force_attack = true if my_a / (my_a+my_d+my_p) > @next_build.a or (their_a+their_d+their_p) < my_a or my_p < @last_p_count or my_d < @last_d_count
             @last_p_count = my_p
             @last_d_count = my_d
