@@ -18,6 +18,7 @@ jQuery ->
         @dest =
           x: x
           y: x
+
       draw: () ->
         if @x - GAME.Off_Set.x >= 0 and  @x - GAME.Off_Set.x < G.GRID.WIDTH and @y - GAME.Off_Set.y >= 0 and  @y - GAME.Off_Set.y < G.GRID.HEIGHT
 
@@ -45,8 +46,9 @@ jQuery ->
       shoot: () ->
         if @last_shot + G.BALANCE.SHOOTING_FEQ < G.Tick or G.Tick < @last_shot
           for y in [0..G.BALANCE.BULLET.LIFE]
-            break if @y+y > GAME.Board.Height
-            if GAME.Board.Data[@x][@y+y].ocupied != 0 and GAME.Board.Data[@x][@y+y].ocupied.player != @player
+            break if within_Board(@x,@y+y) == false
+            break if GAME.Board.Data[@x][@y+y].ocupied.kind == 'm'
+            if GAME.Board.Data[@x][@y+y].ocupied != 0 and GAME.Board.Data[@x][@y+y].ocupied.player != @player and GAME.Board.Data[@x][@y+y].ocupied.player != 'world'
               GAME.Board.Bullets.push(new bullet(@x,@y,0,1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
@@ -54,62 +56,70 @@ jQuery ->
               return true
 
           for y in [0..G.BALANCE.BULLET.LIFE]
-            break if @y-y < 0
-            if GAME.Board.Data[@x][@y-y].ocupied != 0 and GAME.Board.Data[@x][@y-y].ocupied.player != @player
+            break if within_Board(@x,@y-y) == false
+            break if GAME.Board.Data[@x][@y-y].ocupied.kind == 'm'
+            if GAME.Board.Data[@x][@y-y].ocupied != 0 and GAME.Board.Data[@x][@y-y].ocupied.player != @player and GAME.Board.Data[@x][@y-y].ocupied.player != 'world'
               GAME.Board.Bullets.push(new bullet(@x,@y,0,-1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
               GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
-            break if @x-x < 0
-            if GAME.Board.Data[@x-x][@y].ocupied != 0 and GAME.Board.Data[@x-x][@y].ocupied.player != @player
+            break if within_Board(@x-x,@y) == false
+            break if GAME.Board.Data[@x-x][@y].ocupied.kind == 'm'
+            if GAME.Board.Data[@x-x][@y].ocupied != 0 and GAME.Board.Data[@x-x][@y].ocupied.player != @player and GAME.Board.Data[@x-x][@y].ocupied.player != 'world'
               GAME.Board.Bullets.push(new bullet(@x,@y,-1,0,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
               GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
-            break if @x+x > GAME.Board.Width
-            if GAME.Board.Data[@x+x][@y].ocupied != 0 and GAME.Board.Data[@x+x][@y].ocupied.player != @player
+            break if within_Board(@x+x,@y) == false
+            break if GAME.Board.Data[@x+x][@y].ocupied.kind == 'm'
+            if GAME.Board.Data[@x+x][@y].ocupied != 0 and GAME.Board.Data[@x+x][@y].ocupied.player != @player and GAME.Board.Data[@x+x][@y].ocupied.player != 'world'
               GAME.Board.Bullets.push(new bullet(@x,@y,1,0,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
               GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
-            break if @x+x > GAME.Board.Width or @y+x > GAME.Board.Height
-            if GAME.Board.Data[@x+x][@y+x].ocupied != 0 and GAME.Board.Data[@x+x][@y+x].ocupied.player != @player
+            break if within_Board(@x+x,@y+x) == false
+            break if GAME.Board.Data[@x+x][@y+x].ocupied.kind == 'm'
+            if GAME.Board.Data[@x+x][@y+x].ocupied != 0 and GAME.Board.Data[@x+x][@y+x].ocupied.player != @player and GAME.Board.Data[@x+x][@y+x].ocupied.player != 'world'
               GAME.Board.Bullets.push(new bullet(@x,@y,1,1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
               GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
-            break if @x-x < 0 or @y-x < 0
-            if GAME.Board.Data[@x-x][@y-x].ocupied != 0 and GAME.Board.Data[@x-x][@y-x].ocupied.player != @player
+            break if within_Board(@x-x,@y-x) == false
+            break if GAME.Board.Data[@x-x][@y-x].ocupied.kind == 'm'
+            if GAME.Board.Data[@x-x][@y-x].ocupied != 0 and GAME.Board.Data[@x-x][@y-x].ocupied.player != @player and GAME.Board.Data[@x-x][@y-x].ocupied.player != 'world'
               GAME.Board.Bullets.push(new bullet(@x,@y,-1,-1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
               GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
-            break if @x-x <0  or @y+x > GAME.Board.Height
-            if GAME.Board.Data[@x-x][@y+x].ocupied != 0 and GAME.Board.Data[@x-x][@y+x].ocupied.player != @player
+            break if within_Board(@x-x,@y+x) == false
+            break if GAME.Board.Data[@x-x][@y+x].ocupied.kind == 'm'
+            if GAME.Board.Data[@x-x][@y+x].ocupied != 0 and GAME.Board.Data[@x-x][@y+x].ocupied.player != @player and GAME.Board.Data[@x-x][@y+x].ocupied.player != 'world'
               GAME.Board.Bullets.push(new bullet(@x,@y,-1,1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
               GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
           for x in [0..G.BALANCE.BULLET.LIFE]
-            break if @x+x > GAME.Board.Width or @y-x < 0
-            if GAME.Board.Data[@x+x][@y-x].ocupied != 0 and GAME.Board.Data[@x+x][@y-x].ocupied.player != @player
+            break if within_Board(@x+x,@y-x) == false
+            break if GAME.Board.Data[@x+x][@y-x].ocupied.kind == 'm'
+            if GAME.Board.Data[@x+x][@y-x].ocupied != 0 and GAME.Board.Data[@x+x][@y-x].ocupied.player != @player  and GAME.Board.Data[@x+x][@y-x].ocupied.player != 'world'
               GAME.Board.Bullets.push(new bullet(@x,@y,1,-1,@player))
               @last_shot = G.Tick
               PS.AudioPlay G.SOUNDS.SHOOT
               GAME.Board.Flashes.push(new flash(@x,@y,G.COLORS.FLASH.SHOOT,G.BALANCE.FLASH.SHOOT))
               return true
       move: () ->
+        
         if @kind == 'p'
           GAME.Player.Credits += G.BALANCE.PRODUCTION_RATE  if @player == 'player'
           GAME.Comp.Credits += G.BALANCE.PRODUCTION_RATE  if @player == 'comp'
@@ -118,6 +128,7 @@ jQuery ->
         else if @kind == 'a'
           this.shoot()
           if @dest.x != @x or @dest.y != @y
+            
             @has_moved = true
             apple = { }
             h = Math.abs(@dest.x - @x) + Math.abs(@dest.y - @y)
@@ -126,6 +137,8 @@ jQuery ->
             lowest = String(@x+','+@y)
             last_move = ''
             size = 1
+
+            
             while lowest != goal and size < 512
               ss = 'lowest = ' + lowest + '\n'
               for n of apple
@@ -144,10 +157,14 @@ jQuery ->
               south = -1
               east = -1
               west = -1
-              north = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y-1)) + m + 1 if y-1 > 0 and (GAME.Board.Data[x][y-1].ocupied == 0)# or GAME.Board.Data[x][y-1].ocupied.player != @player)
-              south = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y+1)) + m + 1 if y+1 < GAME.Board.Height and (GAME.Board.Data[x][y+1].ocupied == 0)# or GAME.Board.Data[x][y+1].ocupied.player != @player)
-              east = Math.abs(@dest.x - (x+1)) + Math.abs(@dest.y - y) + m + 1 if x+1 < GAME.Board.Width and (GAME.Board.Data[x+1][y].ocupied == 0)# or GAME.Board.Data[x+1][y].ocupied.player != @player)
-              west = Math.abs(@dest.x - (x-1)) + Math.abs(@dest.y - y) + m + 1 if x-1 > 0 and (GAME.Board.Data[x-1][y].ocupied == 0)# or GAME.Board.Data[x-1][y].ocupied.player != @player)
+              if within_Board(x,y-1)
+                north = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y-1)) + m + 1 if (GAME.Board.Data[x][y-1].ocupied == 0)# or GAME.Board.Data[x][y-1].ocupied.player != @player)
+              if within_Board(x,y+1)
+                south = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y+1)) + m + 1 if (GAME.Board.Data[x][y+1].ocupied == 0)# or GAME.Board.Data[x][y+1].ocupied.player != @player)
+              if within_Board(x+1,y)
+                east = Math.abs(@dest.x - (x+1)) + Math.abs(@dest.y - y) + m + 1 if (GAME.Board.Data[x+1][y].ocupied == 0)# or GAME.Board.Data[x+1][y].ocupied.player != @player)
+              if within_Board(x-1,y)
+                west = Math.abs(@dest.x - (x-1)) + Math.abs(@dest.y - y) + m + 1 if (GAME.Board.Data[x-1][y].ocupied == 0)# or GAME.Board.Data[x-1][y].ocupied.player != @player)
 
               apple[String(x+','+(y-1))] = {v: north, moves: m+1,history: hi+'n',explored: false} if north != -1 and (apple[String(x+','+(y-1))] is undefined or apple[String(x+','+(y-1))].v > north )
               apple[String(x+','+(y+1))] = {v: south, moves: m+1,history: hi+'s',explored: false} if south != -1 and (apple[String(x+','+(y+1))] is undefined or apple[String(x+','+(y+1))].v > south )
@@ -164,30 +181,42 @@ jQuery ->
                   lowest_v = apple[node].v
               if options.length == 0
                 options = []
-                if @x < @dest.x and GAME.Board.Data[@x+1][@y].ocupied == 0
-                  options.push(String((@x+1)+','+@y))
-                if @x > @dest.x and GAME.Board.Data[@x-1][@y].ocupied == 0
-                  options.push(String((@x-1)+','+@y))
-                if @y > @dest.y and GAME.Board.Data[@x][@y-1].ocupied == 0
-                  options.push(String((@x)+','+(@y-1)))
-                if @y < @dest.y and GAME.Board.Data[@x][@y+1].ocupied == 0
-                  options.push(String((@x)+','+(@y+1)))
+                if within_Board(@x+1,@y)
+                  if @x < @dest.x and GAME.Board.Data[@x+1][@y].ocupied == 0
+                    options.push(String((@x+1)+','+@y))
+                if within_Board(@x-1,@y)
+                  if @x > @dest.x and GAME.Board.Data[@x-1][@y].ocupied == 0
+                    options.push(String((@x-1)+','+@y))
+                if within_Board(@x,@y-1)
+                  if @y > @dest.y and GAME.Board.Data[@x][@y-1].ocupied == 0
+                    options.push(String((@x)+','+(@y-1)))
+                if within_Board(@x,@y+1)
+                  if @y < @dest.y and GAME.Board.Data[@x][@y+1].ocupied == 0
+                    options.push(String((@x)+','+(@y+1)))
                 lowest = options[Math.floor(Math.random()*options.length)]
                 break
               lowest = options[Math.floor(Math.random()*options.length)]
+
+            
             if apple[lowest] != undefined
               move = apple[lowest].history[0]
               if apple[lowest].history.length == 0
                 options = []
-                if @x < @dest.x and GAME.Board.Data[@x+1][@y].ocupied == 0
-                  options.push('e')
-                if @x > @dest.x and GAME.Board.Data[@x-1][@y].ocupied == 0
-                  options.push('w')
-                if @y > @dest.y and GAME.Board.Data[@x][@y-1].ocupied == 0
-                  options.push('n')
-                if @y < @dest.y and GAME.Board.Data[@x][@y+1].ocupied == 0
-                  options.push('s')
+                if within_Board(@x+1,@y)
+                  if @x < @dest.x and GAME.Board.Data[@x+1][@y].ocupied == 0
+                    options.push('e')
+                if within_Board(@x-1,@y)
+                  if @x > @dest.x and GAME.Board.Data[@x-1][@y].ocupied == 0
+                    options.push('w')
+                if within_Board(@x,@y-1)
+                  if @y > @dest.y and GAME.Board.Data[@x][@y-1].ocupied == 0
+                    options.push('n')
+                if within_Board(@x,@y+1)
+                  if @y < @dest.y and GAME.Board.Data[@x][@y+1].ocupied == 0
+                    options.push('s')
                 move = options[Math.floor(Math.random()*options.length)]
+
+              
               dx = 0
               dy = 0
               dx = 1 if move == 'e'
@@ -201,7 +230,35 @@ jQuery ->
                 @x = @x + 1 if move == 'e'
                 @x = @x - 1 if move == 'w'
                 GAME.Board.Data[@x][@y].ocupied = this
+              
 
+    class nature
+      constructor: (x,y,kind) ->
+        @x = x
+        @y = y
+        @kind = kind
+        @player = 'world'
+        a = Math.random()
+        b = Math.random()*(1-a)
+        c = (1-a-b)
+        p = [a,b,c]
+        color = PS.UnmakeRGB 0x000000
+        for i in [0..2]
+          co = PS.UnmakeRGB G.COLORS.NATURE.WATER[i] if @kind == 'w'
+          co = PS.UnmakeRGB G.COLORS.NATURE.ROCK[i] if @kind == 'm'
+          color.r += Math.floor(co.r * p[i])
+          color.g += Math.floor(co.g * p[i])
+          color.b += Math.floor(co.b * p[i])
+        @color = color
+
+      draw: () ->
+        if @x - GAME.Off_Set.x >= 0 and  @x - GAME.Off_Set.x < G.GRID.WIDTH and @y - GAME.Off_Set.y >= 0 and  @y - GAME.Off_Set.y < G.GRID.HEIGHT
+
+          x = @x - GAME.Off_Set.x
+          y = @y - GAME.Off_Set.y
+          PS.BeadColor x,y,@color
+      move: () ->
+        a = 0
 
     class bullet
       constructor: (x,y,vx,vy,player) ->
@@ -260,8 +317,6 @@ jQuery ->
 
     class AI
       constructor: () ->
-
-
         url = "/asciiai/get"
         json = 'nothing'
         $.ajax
@@ -320,7 +375,7 @@ jQuery ->
                 my_a += 1 if GAME.Board.Data[x][y].ocupied.kind == 'a'
           if options.length > 0
             nb = 'p'
-            nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p
+            nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p or (their_a+their_d+their_p == 1)
             nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a
             nb = 'p' if my_p <= @min_p
             GAME.Comp.Credits -= 1
@@ -352,6 +407,8 @@ jQuery ->
 
 
     ###------------------------------------------ Helper functions ----------------------------------------- ###
+    within_Board= (x,y) ->
+      return x >=0 and x <= GAME.Board.Width and y>=0 and y <= GAME.Board.Height
     build_die_flash_color = () ->
       a = Math.random()
       b = Math.random()*(1-a)
@@ -383,18 +440,47 @@ jQuery ->
         GAME.Board.Data.push(col)
       GAME.Board.Data[4][4].ocupied = new unit(4,4,'p','player')
       if G.Mode == 'play'
-        GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-4,'p','comp')
-        GAME.Board.Data[GAME.Board.Width-5][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-5,GAME.Board.Height-5,'d','comp')
+        GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-3].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-3,'p','comp')
+        GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-4,'d','comp')
+
+        if Settings.Board.Mountains
+          left = Math.floor((GAME.Board.Width * GAME.Board.Height)*0.1)
+          limit = 2 * left
+          while left > 0 and limit > 0
+            limit -= 1
+            x = Math.floor(Math.random() * GAME.Board.Width)
+            y = Math.floor(Math.random() * GAME.Board.Height)
+            if GAME.Board.Data[x][y].ocupied == 0
+              GAME.Board.Data[x][y].ocupied = new nature(x,y,'m')
+              left -= 1
+        if Settings.Board.Lakes
+          left = Math.floor((GAME.Board.Width * GAME.Board.Height)*0.1)
+          limit = 2 * left
+          while left > 0 and limit > 0
+            limit -= 1
+            x = Math.floor(Math.random() * GAME.Board.Width)
+            y = Math.floor(Math.random() * GAME.Board.Height)
+            if GAME.Board.Data[x][y].ocupied == 0
+              GAME.Board.Data[x][y].ocupied = new nature(x,y,'w')
+              left -= 1
+
 
     move_game= () ->
+      
       player_unit_count = 0
       comp_unit_count = 0
       for x in [0..GAME.Board.Width]
         for y in [0..GAME.Board.Height]
           if GAME.Board.Data[x][y].ocupied != 0
-            GAME.Board.Data[x][y].ocupied.move() if GAME.Board.Data[x][y].ocupied.has_moved == false
+            
+            if GAME.Board.Data[x][y].ocupied.has_moved == false
+              
+              GAME.Board.Data[x][y].ocupied.move()
+            
             player_unit_count += 1 if GAME.Board.Data[x][y].ocupied.player == 'player'
+            
             comp_unit_count += 1 if GAME.Board.Data[x][y].ocupied.player == 'comp'
+            
       if G.Mode == 'play' or (G.Mode == 'tutorial' and TUT.current_step == 4)
         if player_unit_count == 0
           PS.Clock 0
@@ -408,6 +494,8 @@ jQuery ->
           GAME.Comp.AI.report(0) if G.Mode == 'play'
           G.Mode = 'home'
           PS.Init()
+
+      
       if GAME.Board.Bullets.length > 0
         for bi in [0..GAME.Board.Bullets.length-1]
           b = GAME.Board.Bullets[bi]
@@ -415,7 +503,7 @@ jQuery ->
             hit = b.move()
             if hit
               if GAME.Board.Data[b.x][b.y].ocupied != 0
-                if GAME.Board.Data[b.x][b.y].ocupied.player != b.player
+                if GAME.Board.Data[b.x][b.y].ocupied.player != b.player and GAME.Board.Data[b.x][b.y].ocupied.player != 'world'
                   if Math.random() <= G.BALANCE.BULLET.SUCCESS_RATE
                     GAME.Board.Data[b.x][b.y].ocupied = 0
                     PS.AudioPlay G.SOUNDS.DIE
@@ -424,6 +512,7 @@ jQuery ->
               else
                 b.life = -1
 
+      
 
       if GAME.Board.Bullets.length > 0
         removed = 0
@@ -433,15 +522,19 @@ jQuery ->
             if GAME.Board.Bullets[bi-removed].life <= 0
               GAME.Board.Bullets.splice(bi-removed,1)
               removed += 1
+      
 
       for x in [0..GAME.Board.Width]
         for y in [0..GAME.Board.Height]
           if GAME.Board.Data[x][y].ocupied != 0
             GAME.Board.Data[x][y].ocupied.has_moved = false
+      
 
     draw_game= () ->
-      for x in [GAME.Off_Set.x..(GAME.Off_Set.x+G.GRID.WIDTH-1)]
-        for y in [GAME.Off_Set.y..(GAME.Off_Set.y+G.GRID.HEIGHT-1)]
+      for xi in [0..(G.GRID.WIDTH-1)]
+        for yi in [0..(G.GRID.HEIGHT-1)]
+          x = xi + GAME.Off_Set.x
+          y = yi + GAME.Off_Set.y
           PS.BeadColor x-GAME.Off_Set.x,y-GAME.Off_Set.y,GAME.Board.Data[x][y].color
           PS.BeadGlyph x-GAME.Off_Set.x,y-GAME.Off_Set.y,0
           PS.BeadBorderWidth x-GAME.Off_Set.x,y-GAME.Off_Set.y,0
@@ -451,6 +544,8 @@ jQuery ->
       if GAME.Board.Bullets.length > 0
         for b in GAME.Board.Bullets
           if GAME.Board.Data[b.x][b.y].ocupied == 0
+            b.draw()
+          else if GAME.Board.Data[b.x][b.y].ocupied.player == 'world'
             b.draw()
 
       if GAME.Board.Flashes.length > 0
@@ -537,6 +632,8 @@ jQuery ->
           PS.BeadGlyph 1,3,' '
         else if event == 'click'
           G.Mode = 'tutorial'
+          Settings.Board.Width = 15
+          Settings.Board.Height = 14
           PS.Init()
 
       t = 'New GAME'
@@ -604,7 +701,112 @@ jQuery ->
           Settings.Comp_Credits = Math.min(9,Settings.Comp_Credits+1)
           draw_home()
 
+      t = 'World'
+      x = 3
+      for ti in t
+        PS.BeadGlyph x,8, ti
+        x += 1
 
+      t = 'Width'
+      x = 4
+      for ti in t
+        PS.BeadGlyph x,9, ti
+        x += 1
+      PS.BeadBorderWidth x,9,2
+      PS.BeadBorderColor x,9,0x000000
+      PS.BeadGlyph x,9,'◀'
+      PS.BeadData x,9, (event) ->
+        if event == 'click'
+          Settings.Board.Width = Math.max(15,Settings.Board.Width - 1)
+          draw_home()
+      x += 1
+      PS.BeadBorderWidth x,9,2
+      PS.BeadBorderColor x,9,0x000000
+      PS.BeadGlyph x,9,String(Math.floor(Settings.Board.Width / 10))
+      x += 1
+      PS.BeadBorderWidth x,9,2
+      PS.BeadBorderColor x,9,0x000000
+      PS.BeadGlyph x,9,String(Settings.Board.Width - 10*Math.floor(Settings.Board.Width / 10))
+      x += 1
+      PS.BeadBorderWidth x,9,2
+      PS.BeadBorderColor x,9,0x000000
+      PS.BeadGlyph x,9,'▶'
+      PS.BeadData x,9, (event) ->
+        if event == 'click'
+          Settings.Board.Width = Math.min(99,Settings.Board.Width + 1)
+          draw_home()
+
+      t = 'Height'
+      x = 4
+      for ti in t
+        PS.BeadGlyph x,10, ti
+        x += 1
+      PS.BeadBorderWidth x,10,2
+      PS.BeadBorderColor x,10,0x000000
+      PS.BeadGlyph x,10,'◀'
+      PS.BeadData x,10, (event) ->
+        if event == 'click'
+          Settings.Board.Height = Math.max(14,Settings.Board.Height - 1)
+          draw_home()
+      x += 1
+      PS.BeadBorderWidth x,10,2
+      PS.BeadBorderColor x,10,0x000000
+      PS.BeadGlyph x,10,String(Math.floor(Settings.Board.Height / 10))
+      x += 1
+      PS.BeadBorderWidth x,10,2
+      PS.BeadBorderColor x,10,0x000000
+      PS.BeadGlyph x,10,String(Settings.Board.Height - 10*Math.floor(Settings.Board.Height / 10))
+      x += 1
+      PS.BeadBorderWidth x,10,2
+      PS.BeadBorderColor x,10,0x000000
+      PS.BeadGlyph x,10,'▶'
+      PS.BeadData x,10, (event) ->
+        if event == 'click'
+          Settings.Board.Height = Math.min(99,Settings.Board.Height + 1)
+          draw_home()
+
+      t = 'Mountains'
+      x = 4
+      for ti in t
+        PS.BeadGlyph x,11, ti
+        x += 1
+      PS.BeadBorderWidth 3,11,2
+      PS.BeadBorderColor 3,11,0x000000
+      PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
+      PS.BeadData 3,11, (event) ->
+        if event == 'enter'
+          PS.BeadGlyph 3,11,'✔'
+        else if event == 'leave'
+          PS.BeadGlyph 3,11,' '
+          PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
+        else if event == 'click'
+          if Settings.Board.Mountains
+            Settings.Board.Mountains = false
+          else
+            Settings.Board.Mountains = true
+          PS.BeadGlyph 3,11,' '
+          PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
+      t = 'Lakes'
+      x = 4
+      for ti in t
+        PS.BeadGlyph x,12 , ti
+        x += 1
+      PS.BeadBorderWidth 3,12,2
+      PS.BeadBorderColor 3,12,0x000000
+      PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
+      PS.BeadData 3,12, (event) ->
+        if event == 'enter'
+          PS.BeadGlyph 3,12,'✔'
+        else if event == 'leave'
+          PS.BeadGlyph 3,12,' '
+          PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
+        else if event == 'click'
+          if Settings.Board.Lakes
+            Settings.Board.Lakes = false
+          else
+            Settings.Board.Lakes = true
+          PS.BeadGlyph 3,12,' '
+          PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
 
 
     reset = () ->
@@ -660,6 +862,9 @@ jQuery ->
         FLASH:
           DIE: ([0x770000,0xa30000,0xff6800,0xfd9f09,0xb50700])
           SHOOT: {r: 255,g: 255,b: 255}
+        NATURE:
+          ROCK: ([0x959387,0xbdb5aa,0xf2efeb,0x68635f,0x8d8a83])
+          WATER: ([0xb0daff,0x325b7f,0x64b7ff,0x586d7f,0x5092cc])
 
       SOUNDS:
         PLACE_BUILDING: 'fx_gun'
@@ -688,8 +893,10 @@ jQuery ->
             ]
     Settings =
       Board:
-        Width: 16
-        Height: 15
+        Width: 15
+        Height: 14
+        Mountains: false
+        Lakes: false
       Player_Credits: 4
       Comp_Credits: 2
     GAME =
@@ -697,8 +904,8 @@ jQuery ->
         x: 0
         y: 0
       Board:
-        Width: 16
-        Height: 15
+        Width: 15
+        Height: 14
         Data: []
         Bullets: []
         Flashes: []
@@ -750,8 +957,6 @@ jQuery ->
 
                 GAME.Player.Hover.hover = false
                 GAME.Board.Data[GAME.Player.Hover.x][GAME.Player.Hover.y].ocupied = GAME.Player.Hover
-                PS.BeadFlashColor x,y,0xffffff
-                PS.BeadFlash x,y
                 PS.AudioPlay G.SOUNDS.PLACE_BUILDING
                 if G.Mode == 'tutorial'
                   if TUT.current_step == 0 and GAME.Player.Hover.kind == 'p'
@@ -777,29 +982,30 @@ jQuery ->
 
     PS.Release = (x, y, data) ->
       "use strict"
-      if GAME.Player.Selected  != 0
-        if GAME.Player.Selected.x == GAME.Player.Selected.w and GAME.Player.Selected.y == GAME.Player.Selected.h
-          moved = 0
-          for x in [0..GAME.Board.Width]
-            for y in [0..GAME.Board.Height]
-              if GAME.Board.Data[x][y].ocupied != 0 and GAME.Board.Data[x][y].ocupied.player == 'player' and GAME.Board.Data[x][y].ocupied.selected
-                GAME.Board.Data[x][y].ocupied.dest = {x: GAME.Player.Selected.x,y: GAME.Player.Selected.y}
-                moved += 1
-          if moved > 0
-            if G.Mode == 'tutorial'
-              if TUT.current_step == 3
-                TUT.current_step = 4
-                TUT.current_tip = 0
-                GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-4,'p','comp')
-                GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-4,'p','comp')
-                GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-3].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-3,'p','comp')
-                GAME.Board.Data[GAME.Board.Width-5][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-5,GAME.Board.Height-5,'d','comp')
-                GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-5,'d','comp')
-            deselect()
+      if G.Mode != 'home'
+        if GAME.Player.Selected  != 0
+          if GAME.Player.Selected.x == GAME.Player.Selected.w and GAME.Player.Selected.y == GAME.Player.Selected.h
+            moved = 0
+            for x in [0..GAME.Board.Width]
+              for y in [0..GAME.Board.Height]
+                if GAME.Board.Data[x][y].ocupied != 0 and GAME.Board.Data[x][y].ocupied.player == 'player' and GAME.Board.Data[x][y].ocupied.selected
+                  GAME.Board.Data[x][y].ocupied.dest = {x: GAME.Player.Selected.x,y: GAME.Player.Selected.y}
+                  moved += 1
+            if moved > 0
+              if G.Mode == 'tutorial'
+                if TUT.current_step == 3
+                  TUT.current_step = 4
+                  TUT.current_tip = 0
+                  GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-4,'p','comp')
+                  GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-4,'p','comp')
+                  GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-3].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-3,'p','comp')
+                  GAME.Board.Data[GAME.Board.Width-5][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-5,GAME.Board.Height-5,'d','comp')
+                  GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-5,'d','comp')
+              deselect()
+            else
+              select()
           else
             select()
-        else
-          select()
 
     PS.Enter = (xx, yy, data) ->
       "use strict"
@@ -878,16 +1084,18 @@ jQuery ->
       G.Tick += 1
       G.Tick = 0 if G.Tick >= 216000
       if G.Tick % G.Scroll_speed == 0
-        GAME.Off_Set.x = Math.max(0,Math.min(GAME.Board.Width-G.GRID.WIDTH,GAME.Off_Set.x + GAME.Board.Shifting.x))
-        GAME.Off_Set.y = Math.max(0,Math.min(GAME.Board.Height-G.GRID.HEIGHT,GAME.Off_Set.y + GAME.Board.Shifting.y))
+        GAME.Off_Set.x = Math.max(0,Math.min(GAME.Board.Width-G.GRID.WIDTH+1,GAME.Off_Set.x + GAME.Board.Shifting.x))
+        GAME.Off_Set.y = Math.max(0,Math.min(GAME.Board.Height-G.GRID.HEIGHT+1,GAME.Off_Set.y + GAME.Board.Shifting.y))
       draw_game()
       if G.Tick % 5 == 0
         move_game()
       if GAME.Player.Selected != 0
         for x in [GAME.Player.Selected.x..GAME.Player.Selected.w]
           for y in [GAME.Player.Selected.y..GAME.Player.Selected.h]
-            PS.BeadBorderColor x+GAME.Off_Set.x,y+GAME.Off_Set.y,0x00ffff
-            PS.BeadBorderWidth x+GAME.Off_Set.x,y+GAME.Off_Set.y,2
+            if x-GAME.Off_Set.x >= 0 and x-GAME.Off_Set.x < G.GRID.WIDTH
+              if y-GAME.Off_Set.y >= 0 and y-GAME.Off_Set.y < G.GRID.HEIGHT
+                PS.BeadBorderColor x-GAME.Off_Set.x,y-GAME.Off_Set.y,0x00ffff
+                PS.BeadBorderWidth x-GAME.Off_Set.x,y-GAME.Off_Set.y,2
       GAME.Comp.AI.think() if G.Mode == 'play'
 
       if G.Mode == 'tutorial'
