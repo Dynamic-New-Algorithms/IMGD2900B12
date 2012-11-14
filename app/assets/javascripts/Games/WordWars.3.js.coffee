@@ -336,6 +336,7 @@ jQuery ->
         @attack_feq = json.attack_timing
 
       report: (win) ->
+        win = 0 if G.Tick < 600
         url = "/asciiai/update"
         json = 'nothing'
         $.ajax
@@ -835,6 +836,8 @@ jQuery ->
 
       GAME.Comp.Credits = Settings.Comp_Credits + Settings.Player_Credits
       GAME.Comp.AI = new AI()
+
+      G.Tick = 0
 
     debug = (response) ->
       property_names = ""
