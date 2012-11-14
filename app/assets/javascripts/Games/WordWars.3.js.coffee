@@ -20,7 +20,7 @@ jQuery ->
           y: x
 
       draw: () ->
-        if @x - GAME.Off_Set.x >= 0 and  @x - GAME.Off_Set.x < G.GRID.WIDTH and @y - GAME.Off_Set.y >= 0 and  @y - GAME.Off_Set.y < G.GRID.HEIGHT
+        if (@x - GAME.Off_Set.x >= 0 and  @x - GAME.Off_Set.x < G.GRID.WIDTH and @y - GAME.Off_Set.y >= 0 and  @y - GAME.Off_Set.y < G.GRID.HEIGHT)
 
           x = @x - GAME.Off_Set.x
           y = @y - GAME.Off_Set.y
@@ -43,6 +43,17 @@ jQuery ->
           PS.BeadGlyph x,y, '♜' if @kind == 'd'
           PS.BeadGlyph x,y, '⚒' if @kind == 'p'
           PS.BeadGlyph x,y, '♞' if @kind == 'a'
+        else if @hover
+          x = @x - GAME.Off_Set.x
+          y = @y - GAME.Off_Set.y
+          PS.BeadColor x,y, G.COLORS.UNIT.HOVER_OK if @hover
+          PS.BeadGlyphColor x,y, G.COLORS.UNIT.PLAYER if @player == 'player'
+          PS.BeadGlyphColor x,y, G.COLORS.UNIT.COMP if @player == 'comp'
+          PS.BeadGlyph x,y, '♜' if @kind == 'd'
+          PS.BeadGlyph x,y, '⚒' if @kind == 'p'
+          PS.BeadGlyph x,y, '♞' if @kind == 'a'
+
+
       shoot: () ->
         if @last_shot + G.BALANCE.SHOOTING_FEQ < G.Tick or G.Tick < @last_shot
           for y in [0..G.BALANCE.BULLET.LIFE]
@@ -230,6 +241,15 @@ jQuery ->
                 @x = @x + 1 if move == 'e'
                 @x = @x - 1 if move == 'w'
                 GAME.Board.Data[@x][@y].ocupied = this
+                if G.Mode == 'tutorial'
+                  if TUT.current_step == 3
+                    TUT.current_step = 4
+                    TUT.current_tip = 0
+                    GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-4,'p','comp')
+                    GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-4,'p','comp')
+                    GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-3].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-3,'p','comp')
+                    GAME.Board.Data[GAME.Board.Width-5][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-5,GAME.Board.Height-5,'d','comp')
+                    GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-5,'d','comp')
               
 
     class nature
@@ -595,11 +615,10 @@ jQuery ->
               GAME.Board.Flashes.splice(fi-removed,1)
               removed += 1
 
-      if GAME.Player.Hover != 0
-        GAME.Player.Hover.draw()
       for x in [0..(G.GRID.WIDTH-1)]
         PS.BeadColor x,G.GRID.HEIGHT,0xffffff
         PS.BeadGlyphColor x,G.GRID.HEIGHT,0x000000
+        PS.BeadGlyph x,G.GRID.HEIGHT, 0
 
       PS.BeadGlyph 0,G.GRID.HEIGHT,'$'
       c = GAME.Player.Credits
@@ -626,6 +645,8 @@ jQuery ->
         GAME.Player.Hover = new unit(x+GAME.Off_Set.x,y+GAME.Off_Set.y,'a','player')
         GAME.Player.Hover.hover = true
 
+      if GAME.Player.Hover != 0
+        GAME.Player.Hover.draw()
     deselect = () ->
       GAME.Player.Selected  = 0
       GAME.Player.Hover = 0
@@ -1090,15 +1111,6 @@ jQuery ->
                   GAME.Board.Data[x][y].ocupied.dest = {x: GAME.Player.Selected.x,y: GAME.Player.Selected.y}
                   moved += 1
             if moved > 0
-              if G.Mode == 'tutorial'
-                if TUT.current_step == 3
-                  TUT.current_step = 4
-                  TUT.current_tip = 0
-                  GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-4,'p','comp')
-                  GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-4,'p','comp')
-                  GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-3].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-3,'p','comp')
-                  GAME.Board.Data[GAME.Board.Width-5][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-5,GAME.Board.Height-5,'d','comp')
-                  GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-5].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-5,'d','comp')
               deselect()
             else
               select()
