@@ -423,47 +423,82 @@ jQuery ->
         color.b += Math.floor(co.b * p[i])
       return color
     build_blank_board = () ->
-      GAME.Board.Data = []
-      for x in [0..GAME.Board.Width]
-        col = []
-        for y in [0..GAME.Board.Height]
-          a = Math.random()
-          b = Math.random()*(1-a)
-          c = (1-a-b)
-          p = [a,b,c]
-          color = PS.UnmakeRGB 0x000000
-          for i in [0..2]
-            co = PS.UnmakeRGB G.COLORS.BATTLE_GROUND.BG[i]
-            color.r += Math.floor(co.r * p[i])
-            color.g += Math.floor(co.g * p[i])
-            color.b += Math.floor(co.b * p[i])
-          col.push({ocupied: 0,color: color})
-        GAME.Board.Data.push(col)
-      GAME.Board.Data[4][4].ocupied = new unit(4,4,'p','player')
-      if G.Mode == 'play'
-        GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-3].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-3,'p','comp')
-        GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-4,'d','comp')
+      if Settings.Map == 'Custom' or G.Mode == 'tutorial'
+        GAME.Board.Data = []
+        for x in [0..GAME.Board.Width]
+          col = []
+          for y in [0..GAME.Board.Height]
+            a = Math.random()
+            b = Math.random()*(1-a)
+            c = (1-a-b)
+            p = [a,b,c]
+            color = PS.UnmakeRGB 0x000000
+            for i in [0..2]
+              co = PS.UnmakeRGB G.COLORS.BATTLE_GROUND.BG[i]
+              color.r += Math.floor(co.r * p[i])
+              color.g += Math.floor(co.g * p[i])
+              color.b += Math.floor(co.b * p[i])
+            col.push({ocupied: 0,color: color})
+          GAME.Board.Data.push(col)
+        GAME.Board.Data[4][4].ocupied = new unit(4,4,'p','player')
+        if G.Mode == 'play'
+          GAME.Board.Data[GAME.Board.Width-3][GAME.Board.Height-3].ocupied = new unit(GAME.Board.Width-3,GAME.Board.Height-3,'p','comp')
+          GAME.Board.Data[GAME.Board.Width-4][GAME.Board.Height-4].ocupied = new unit(GAME.Board.Width-4,GAME.Board.Height-4,'d','comp')
 
-        if Settings.Board.Mountains
-          left = Math.floor((GAME.Board.Width * GAME.Board.Height)*0.1)
-          limit = 2 * left
-          while left > 0 and limit > 0
-            limit -= 1
-            x = Math.floor(Math.random() * GAME.Board.Width)
-            y = Math.floor(Math.random() * GAME.Board.Height)
-            if GAME.Board.Data[x][y].ocupied == 0
-              GAME.Board.Data[x][y].ocupied = new nature(x,y,'m')
-              left -= 1
-        if Settings.Board.Lakes
-          left = Math.floor((GAME.Board.Width * GAME.Board.Height)*0.1)
-          limit = 2 * left
-          while left > 0 and limit > 0
-            limit -= 1
-            x = Math.floor(Math.random() * GAME.Board.Width)
-            y = Math.floor(Math.random() * GAME.Board.Height)
-            if GAME.Board.Data[x][y].ocupied == 0
+          if Settings.Board.Mountains
+            left = Math.floor((GAME.Board.Width * GAME.Board.Height)*0.1)
+            limit = 2 * left
+            while left > 0 and limit > 0
+              limit -= 1
+              x = Math.floor(Math.random() * GAME.Board.Width)
+              y = Math.floor(Math.random() * GAME.Board.Height)
+              if GAME.Board.Data[x][y].ocupied == 0
+                GAME.Board.Data[x][y].ocupied = new nature(x,y,'m')
+                left -= 1
+          if Settings.Board.Lakes
+            left = Math.floor((GAME.Board.Width * GAME.Board.Height)*0.1)
+            limit = 2 * left
+            while left > 0 and limit > 0
+              limit -= 1
+              x = Math.floor(Math.random() * GAME.Board.Width)
+              y = Math.floor(Math.random() * GAME.Board.Height)
+              if GAME.Board.Data[x][y].ocupied == 0
+                GAME.Board.Data[x][y].ocupied = new nature(x,y,'w')
+                left -= 1
+      else
+        GAME.Board.Width = MAPS[Settings.Map].w
+        GAME.Board.Height = MAPS[Settings.Map].h
+        GAME.Board.Data = []
+        for x in [0..GAME.Board.Width]
+          col = []
+          for y in [0..GAME.Board.Height]
+            a = Math.random()
+            b = Math.random()*(1-a)
+            c = (1-a-b)
+            p = [a,b,c]
+            color = PS.UnmakeRGB 0x000000
+            for i in [0..2]
+              co = PS.UnmakeRGB G.COLORS.BATTLE_GROUND.BG[i]
+              color.r += Math.floor(co.r * p[i])
+              color.g += Math.floor(co.g * p[i])
+              color.b += Math.floor(co.b * p[i])
+            col.push({ocupied: 0,color: color})
+          GAME.Board.Data.push(col)
+        alert GAME.Board.Height + ' vs ' + MAPS[Settings.Map].data.length + ' vs ' + GAME.Board.Data.length
+        alert GAME.Board.Width + ' vs ' + MAPS[Settings.Map].data[0].length + ' vs ' + GAME.Board.Data[0].length
+        for x in [0..GAME.Board.Width]
+          for y in [0..GAME.Board.Height]
+            if MAPS[Settings.Map].data[y][x] == 1
               GAME.Board.Data[x][y].ocupied = new nature(x,y,'w')
-              left -= 1
+            else if MAPS[Settings.Map].data[y][x] == 2
+              GAME.Board.Data[x][y].ocupied = new nature(x,y,'m')
+            else if MAPS[Settings.Map].data[y][x] == -1
+              GAME.Board.Data[x][y].ocupied = new unit(x,y,'p','player')
+            else if MAPS[Settings.Map].data[y][x] == -2
+              GAME.Board.Data[x][y].ocupied = new unit(x,y,'p','comp')
+              GAME.Board.Data[x-1][y-1].ocupied = new unit(x-1,y-1,'d','comp')
+        alert 'done'
+
 
 
     move_game= () ->
@@ -611,6 +646,7 @@ jQuery ->
       PS.BeadColor PS.ALL,PS.ALL, 0xffffff
       PS.BeadBorderWidth PS.ALL,PS.ALL,0
       PS.BeadGlyphColor PS.ALL,PS.ALL,0x000000
+      PS.BeadGlyph PS.ALL,PS.ALL,0
 
       t = '♜ ASCii Wars ♜'
       x = Math.floor(((G.GRID.WIDTH - t.length)) / 2)
@@ -702,112 +738,127 @@ jQuery ->
           Settings.Comp_Credits = Math.min(9,Settings.Comp_Credits+1)
           draw_home()
 
-      t = 'World'
-      x = 3
+      t = Settings.Map
+      x = 2
       for ti in t
         PS.BeadGlyph x,8, ti
         x += 1
-
-      t = 'Width'
-      x = 4
-      for ti in t
-        PS.BeadGlyph x,9, ti
-        x += 1
-      PS.BeadBorderWidth x,9,2
-      PS.BeadBorderColor x,9,0x000000
-      PS.BeadGlyph x,9,'◀'
-      PS.BeadData x,9, (event) ->
+      PS.BeadBorderWidth x,8,2
+      PS.BeadBorderColor x,8,0x000000
+      PS.BeadGlyph x,8,'▶'
+      PS.BeadData x,8, (event) ->
         if event == 'click'
-          Settings.Board.Width = Math.max(15,Settings.Board.Width - 1)
-          draw_home()
-      x += 1
-      PS.BeadBorderWidth x,9,2
-      PS.BeadBorderColor x,9,0x000000
-      PS.BeadGlyph x,9,String(Math.floor(Settings.Board.Width / 10))
-      x += 1
-      PS.BeadBorderWidth x,9,2
-      PS.BeadBorderColor x,9,0x000000
-      PS.BeadGlyph x,9,String(Settings.Board.Width - 10*Math.floor(Settings.Board.Width / 10))
-      x += 1
-      PS.BeadBorderWidth x,9,2
-      PS.BeadBorderColor x,9,0x000000
-      PS.BeadGlyph x,9,'▶'
-      PS.BeadData x,9, (event) ->
-        if event == 'click'
-          Settings.Board.Width = Math.min(99,Settings.Board.Width + 1)
+          my_index = -1
+          names = []
+          for name of MAPS
+            names.push(name)
+            if Settings.Map == name
+              my_index = names.length - 1
+          i = (my_index+1) % names.length
+          Settings.Map = names[i]
           draw_home()
 
-      t = 'Height'
-      x = 4
-      for ti in t
-        PS.BeadGlyph x,10, ti
+      if Settings.Map == 'Custom'
+        t = 'Width'
+        x = 4
+        for ti in t
+          PS.BeadGlyph x,9, ti
+          x += 1
+        PS.BeadBorderWidth x,9,2
+        PS.BeadBorderColor x,9,0x000000
+        PS.BeadGlyph x,9,'◀'
+        PS.BeadData x,9, (event) ->
+          if event == 'click'
+            Settings.Board.Width = Math.max(15,Settings.Board.Width - 1)
+            draw_home()
         x += 1
-      PS.BeadBorderWidth x,10,2
-      PS.BeadBorderColor x,10,0x000000
-      PS.BeadGlyph x,10,'◀'
-      PS.BeadData x,10, (event) ->
-        if event == 'click'
-          Settings.Board.Height = Math.max(14,Settings.Board.Height - 1)
-          draw_home()
-      x += 1
-      PS.BeadBorderWidth x,10,2
-      PS.BeadBorderColor x,10,0x000000
-      PS.BeadGlyph x,10,String(Math.floor(Settings.Board.Height / 10))
-      x += 1
-      PS.BeadBorderWidth x,10,2
-      PS.BeadBorderColor x,10,0x000000
-      PS.BeadGlyph x,10,String(Settings.Board.Height - 10*Math.floor(Settings.Board.Height / 10))
-      x += 1
-      PS.BeadBorderWidth x,10,2
-      PS.BeadBorderColor x,10,0x000000
-      PS.BeadGlyph x,10,'▶'
-      PS.BeadData x,10, (event) ->
-        if event == 'click'
-          Settings.Board.Height = Math.min(99,Settings.Board.Height + 1)
-          draw_home()
+        PS.BeadBorderWidth x,9,2
+        PS.BeadBorderColor x,9,0x000000
+        PS.BeadGlyph x,9,String(Math.floor(Settings.Board.Width / 10))
+        x += 1
+        PS.BeadBorderWidth x,9,2
+        PS.BeadBorderColor x,9,0x000000
+        PS.BeadGlyph x,9,String(Settings.Board.Width - 10*Math.floor(Settings.Board.Width / 10))
+        x += 1
+        PS.BeadBorderWidth x,9,2
+        PS.BeadBorderColor x,9,0x000000
+        PS.BeadGlyph x,9,'▶'
+        PS.BeadData x,9, (event) ->
+          if event == 'click'
+            Settings.Board.Width = Math.min(99,Settings.Board.Width + 1)
+            draw_home()
 
-      t = 'Mountains'
-      x = 4
-      for ti in t
-        PS.BeadGlyph x,11, ti
+        t = 'Height'
+        x = 4
+        for ti in t
+          PS.BeadGlyph x,10, ti
+          x += 1
+        PS.BeadBorderWidth x,10,2
+        PS.BeadBorderColor x,10,0x000000
+        PS.BeadGlyph x,10,'◀'
+        PS.BeadData x,10, (event) ->
+          if event == 'click'
+            Settings.Board.Height = Math.max(14,Settings.Board.Height - 1)
+            draw_home()
         x += 1
-      PS.BeadBorderWidth 3,11,2
-      PS.BeadBorderColor 3,11,0x000000
-      PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
-      PS.BeadData 3,11, (event) ->
-        if event == 'enter'
-          PS.BeadGlyph 3,11,'✔'
-        else if event == 'leave'
-          PS.BeadGlyph 3,11,' '
-          PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
-        else if event == 'click'
-          if Settings.Board.Mountains
-            Settings.Board.Mountains = false
-          else
-            Settings.Board.Mountains = true
-          PS.BeadGlyph 3,11,' '
-          PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
-      t = 'Lakes'
-      x = 4
-      for ti in t
-        PS.BeadGlyph x,12 , ti
+        PS.BeadBorderWidth x,10,2
+        PS.BeadBorderColor x,10,0x000000
+        PS.BeadGlyph x,10,String(Math.floor(Settings.Board.Height / 10))
         x += 1
-      PS.BeadBorderWidth 3,12,2
-      PS.BeadBorderColor 3,12,0x000000
-      PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
-      PS.BeadData 3,12, (event) ->
-        if event == 'enter'
-          PS.BeadGlyph 3,12,'✔'
-        else if event == 'leave'
-          PS.BeadGlyph 3,12,' '
-          PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
-        else if event == 'click'
-          if Settings.Board.Lakes
-            Settings.Board.Lakes = false
-          else
-            Settings.Board.Lakes = true
-          PS.BeadGlyph 3,12,' '
-          PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
+        PS.BeadBorderWidth x,10,2
+        PS.BeadBorderColor x,10,0x000000
+        PS.BeadGlyph x,10,String(Settings.Board.Height - 10*Math.floor(Settings.Board.Height / 10))
+        x += 1
+        PS.BeadBorderWidth x,10,2
+        PS.BeadBorderColor x,10,0x000000
+        PS.BeadGlyph x,10,'▶'
+        PS.BeadData x,10, (event) ->
+          if event == 'click'
+            Settings.Board.Height = Math.min(99,Settings.Board.Height + 1)
+            draw_home()
+
+        t = 'Mountains'
+        x = 4
+        for ti in t
+          PS.BeadGlyph x,11, ti
+          x += 1
+        PS.BeadBorderWidth 3,11,2
+        PS.BeadBorderColor 3,11,0x000000
+        PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
+        PS.BeadData 3,11, (event) ->
+          if event == 'enter'
+            PS.BeadGlyph 3,11,'✔'
+          else if event == 'leave'
+            PS.BeadGlyph 3,11,' '
+            PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
+          else if event == 'click'
+            if Settings.Board.Mountains
+              Settings.Board.Mountains = false
+            else
+              Settings.Board.Mountains = true
+            PS.BeadGlyph 3,11,' '
+            PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
+        t = 'Lakes'
+        x = 4
+        for ti in t
+          PS.BeadGlyph x,12 , ti
+          x += 1
+        PS.BeadBorderWidth 3,12,2
+        PS.BeadBorderColor 3,12,0x000000
+        PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
+        PS.BeadData 3,12, (event) ->
+          if event == 'enter'
+            PS.BeadGlyph 3,12,'✔'
+          else if event == 'leave'
+            PS.BeadGlyph 3,12,' '
+            PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
+          else if event == 'click'
+            if Settings.Board.Lakes
+              Settings.Board.Lakes = false
+            else
+              Settings.Board.Lakes = true
+            PS.BeadGlyph 3,12,' '
+            PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
 
 
     reset = () ->
@@ -902,6 +953,7 @@ jQuery ->
         Lakes: false
       Player_Credits: 4
       Comp_Credits: 2
+      Map: 'Custom'
     GAME =
       Off_Set:
         x: 0
@@ -923,6 +975,31 @@ jQuery ->
       Comp:
         Credits: 4
         AI: new AI()
+    r = -2
+    b = -1
+    MAPS =
+      Custom: 0
+      Great_Lake: #name of level (_ instead of Space) limit 10 characters
+        w: 15 #needs to be one less than actual  (or start cound at 0)
+        h: 14
+        data: [  #1 => water,2 => rock, 0 => grass, b => blue start, r => red start red gets a D up and to the left one
+                ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                ([0,0,0,b,0,0,0,0,0,0,0,0,0,0,0,0]),
+                ([0,0,0,0,0,0,1,1,0,0,1,1,0,0,0,0]),
+                ([0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0]),
+                ([0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0]),
+                ([0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0]),
+                ([0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0]),
+                ([0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0]),
+                ([0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0]),
+                ([0,0,0,0,1,1,1,0,0,0,0,0,r,0,0,0]),
+                ([0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0]),
+                ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+                ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+              ]
+
     ###------------------------------------------ PS Events ----------------------------------------- ###
     PS.Init = ->
       PS.GridSize G.GRID.WIDTH, G.GRID.HEIGHT+1

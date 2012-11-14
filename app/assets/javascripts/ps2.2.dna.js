@@ -30,7 +30,7 @@ var PS = {
 
     // Constants
 
-    VERSION: "2.2.4",
+    VERSION: "2.2.5",
     ERROR: "ERROR", // generic error return value
     DEFAULT: "DEFAULT", // use default value
     CURRENT: "CURRENT", // use current value
@@ -782,25 +782,6 @@ PS.CheckY = function ( y, fn )
     return true;
 };
 
-// PS.GetBead(x, y)
-// Takes x/y coords of bead and function name
-// Returns the bead object at (x, y), or null if error
-
-PS.GetBead = function (x, y, fn)
-{
-    "use strict";
-    var i;
-
-    if ( !PS.CheckX( x, fn ) || !PS.CheckY( y, fn ) )
-    {
-        return null;
-    }
-
-    i = x + (y * PS.Grid.x); // get index of bead
-
-    return PS.Grid.beads[i];
-};
-
 // API Functions
 
 // PS.GridSize()
@@ -1079,11 +1060,7 @@ PS.BeadShow = function (x, y, flag)
 
     if ( (flag !== undefined) && (flag !== PS.CURRENT) )
     {
-        if ( flag === PS.DEFAULT )
-        {
-            flag = true;
-        }
-        else if ( flag )
+        if ( (flag === PS.DEFAULT) || flag )
         {
             flag = true;
         }
@@ -2577,7 +2554,7 @@ PS.StatusText = function (str)
     {
         if ( type !== "string" )
         {
-            return PS.Oops(fn + "Parameter is not a string");
+            return PS.Oops(fn + "Parameter is not a valid string");
         }
         e = document.getElementById("status");
         if ( e )
@@ -2603,14 +2580,17 @@ PS.StatusColor = function (rgb)
 
     if ( (rgb !== undefined) && (rgb !== PS.CURRENT) )
     {
-        rgb = PS.ValidRGB( rgb, fn );
-        if ( rgb < 0 )
-        {
-            return PS.ERROR;
-        }
         if ( rgb === PS.DEFAULT )
         {
             rgb = PS.DEFAULT_TEXT_COLOR;
+        }
+        else
+        {
+            rgb = PS.ValidRGB( rgb, fn );
+            if ( rgb < 0 )
+            {
+                return PS.ERROR;
+            }
         }
         colors = PS.UnmakeRGB(rgb);
         PS.StatusRed = colors.r;
@@ -2713,7 +2693,7 @@ PS.Debug = function (str)
     "use strict";
     var e;
 
-    if ( typeof str !== "string" )
+    if ( (typeof str !== "string") || (str.length < 1) )
     {
         return;
     }
@@ -2759,7 +2739,7 @@ PS.Oops = function (str)
     "use strict";
     var e;
 
-    if ( typeof str !== "string" )
+    if ( (typeof str !== "string") || (str.length < 1) )
     {
         str = "???";
     }
@@ -2771,7 +2751,7 @@ PS.Oops = function (str)
     }
 
     PS.Debug( "ERROR: " + str + "\n" );
-    PS.AudioPlay("fx_uhoh");
+    PS.AudioPlay("fx_uhoh", PS.DEFAULT, PS.DEFAULT, PS.DEFAULT);
 
     return PS.ERROR;
 };
@@ -3312,7 +3292,8 @@ PS.SysKeyDown = function (event)
 
     if ( PS.KeyDown ) // only if function exists
     {
-        if ( event.which === null )
+        event.returnValue = false;
+        if ( !event.which )
         {
             key = event.keyCode;    // IE
         }
@@ -3320,7 +3301,9 @@ PS.SysKeyDown = function (event)
         {
             key = event.which;	  // Others
         }
+
         key = PS.KeyFilter(key, event.shiftKey);
+
         try
         {
             PS.KeyDown(key, event.shiftKey, event.ctrlKey);
@@ -3342,6 +3325,7 @@ PS.SysKeyUp = function (event)
 
     if ( PS.KeyUp ) // only if function exists
     {
+        event.returnValue = false;
         if ( event.which === null )
         {
             key = event.keyCode;    // IE
@@ -3350,7 +3334,9 @@ PS.SysKeyUp = function (event)
         {
             key = event.which;	  // Others
         }
+
         key = PS.KeyFilter(key, event.shiftKey);
+
         try
         {
             PS.KeyUp(key, event.shiftKey, event.ctrlKey);
@@ -3438,12 +3424,41 @@ PS.SysWheel = function (event)
 
 // Initialization
 
+var _gaq = _gaq || []; // Google's global
+
+PS.InitGA = function ()
+{
+    "use strict";
+    var ga, s;
+
+    _gaq.push( ['_setAccount', 'UA-36222230-1'] );
+    _gaq.push( ['_trackPageview'] );
+
+    ga = document.createElement('script');
+    if ( ga )
+    {
+        ga.type = 'text/javascript';
+        ga.async = true;
+        ga.src = ('https:' === document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+
+        s = document.getElementsByTagName('script')[0];
+        if ( s )
+        {
+            s.parentNode.insertBefore(ga, s);
+        }
+    }
+};
+
 PS.Sys = function ()
 {
     "use strict";
     var fn, e;
 
     fn = "[PS.Sys] ";
+
+    // Init Google Analytics support
+
+    PS.InitGA();
 
     // Init audio support, preload error sound
 
@@ -4296,16 +4311,37 @@ PS.AudioPlay = function (id, volume, func, path)
         }
     }
 
-    if ( (func !== undefined) && (typeof func !== "function") )
+    // check func
+
+    if ( func === PS.DEFAULT )
+    {
+        func = null;
+    }
+    else if ( (func !== undefined) && (typeof func !== "function") )
     {
         return PS.Oops(fn + "func parameter is not a function");
+    }
+
+    // check path
+
+    if ( path === undefined )
+    {
+        path = PS.AudioCurrentPath;
+    }
+    else if ( path === PS.DEFAULT )
+    {
+        path = PS.AUDIO_PATH_DEFAULT;
+    }
+    else if ( (typeof path !== "string") || (path.length < 1) )
+    {
+        return PS.Oops(fn + "path parameter is not a valid string");
     }
 
     snd = PS.AudioLoad(id, path);
     if ( snd !== PS.ERROR )
     {
         snd.volume = volume;
-        if ( func !== undefined )
+        if ( func )
         {
             snd.addEventListener("ended", func);
         }
