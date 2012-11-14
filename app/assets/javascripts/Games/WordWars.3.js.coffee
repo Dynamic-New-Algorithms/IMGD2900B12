@@ -595,8 +595,8 @@ jQuery ->
     deselect = () ->
       GAME.Player.Selected  = 0
       GAME.Player.Hover = 0
-      for x in [GAME.Off_Set.x..(GAME.Off_Set.x+G.GRID.WIDTH-1)]
-        for y in [GAME.Off_Set.y..(GAME.Off_Set.y+G.GRID.HEIGHT-1)]
+      for x in [0..GAME.Board.Width]
+        for y in [0..GAME.Board.Height]
           if GAME.Board.Data[x][y].ocupied != 0
             GAME.Board.Data[x][y].ocupied.selected = false
     select= () ->
