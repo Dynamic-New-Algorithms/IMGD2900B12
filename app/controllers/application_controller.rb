@@ -26,7 +26,7 @@ class ApplicationController < ActionController::Base
       render :file => 'app/assets/javascripts/Toys/flowers.js'
     else
       @game = "Flowers"
-      @script = '/assets/Toys/flowers.js?body=1'
+      @script = '/flowers.js?body=1'
       render '/game.html.haml',:layout => false
     end
   end
@@ -36,7 +36,7 @@ class ApplicationController < ActionController::Base
       render :file => 'app/assets/javascripts/Toys/Rubik.js'
     else
       @game = "Rubik's Cube"
-      @script = '/assets/Toys/Rubik.js?body=1'
+      @script = '/rubik.js?body=1'
       render '/game.html.haml',:layout => false
     end
   end
@@ -46,7 +46,7 @@ class ApplicationController < ActionController::Base
       render :file => 'app/assets/javascripts/Toys/composer.js'
     else
       @game = "Composer"
-      @script = '/assets/Toys/composer.js?body=1'
+      @script = '/composer.js?body=1'
       render '/game.html.haml',:layout => false
     end
   end
@@ -56,7 +56,7 @@ class ApplicationController < ActionController::Base
       render :file => 'app/assets/javascripts/Toys/letterpop.js'
     else
       @game = "Letter Pop"
-      @script = '/assets/Toys/letterpop.js?body=1'
+      @script = '/letterpop.js?body=1'
       render '/game.html.haml',:layout => false
     end
   end
@@ -67,7 +67,7 @@ class ApplicationController < ActionController::Base
       render :file => 'app/assets/javascripts/Toys/fountainoflife.js'
     else
       @game = "The Fountain of Life"
-      @script = '/assets/Toys/fountainoflife.js?body=1'
+      @script = '/fol.js?body=1'
       render '/game.html.haml',:layout => false
     end
   end
@@ -78,7 +78,7 @@ class ApplicationController < ActionController::Base
       render :file => 'app/assets/javascripts/Toys/peterstoy.js'
     else
       @game = "Peter's Toy"
-      @script = '/assets/Toys/peterstoy.js?body=1'
+      @script = '/peterstoy.js?body=1'
       render '/game.html.haml',:layout => false
     end
   end
@@ -90,7 +90,7 @@ class ApplicationController < ActionController::Base
     else
       @patch = params[:patch]
       @game = 'The Labyrinth'
-      @script = '/assets/Puzzles/TheLabyrinthp' + params[:patch] + '.js?body=1'
+      @script = '/labyrinth/' + params[:patch] + '.js?body=1'
       render '/game.html.haml',:layout => false
     end
   end
@@ -100,7 +100,7 @@ class ApplicationController < ActionController::Base
     else
       @patch = params[:patch]
       @game = 'ASCii Wars'
-      @script = '/assets/Games/WordWars.' + params[:patch] + '.js?body=1'
+      @script = '/wordwars/' + params[:patch] + '.js?body=1'
       render '/game.html.haml',:layout => false
     end
   end
