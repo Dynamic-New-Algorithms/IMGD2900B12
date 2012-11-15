@@ -944,7 +944,7 @@ jQuery ->
             Settings.Board.Width = Math.max(15,Settings.Board.Width - 1)
             draw_home()
         x += 1
-        PS.BeadBorderWidth x,19,2
+        PS.BeadBorderWidth x,10,2
         PS.BeadBorderColor x,10,0x000000
         PS.BeadGlyph x,10,String(Math.floor(Settings.Board.Width / 10))
         x += 1
@@ -975,7 +975,7 @@ jQuery ->
         x += 1
         PS.BeadBorderWidth x,11,2
         PS.BeadBorderColor x,11,0x000000
-        PS.BeadGlyph x,10,String(Math.floor(Settings.Board.Height / 10))
+        PS.BeadGlyph x,11,String(Math.floor(Settings.Board.Height / 10))
         x += 1
         PS.BeadBorderWidth x,11,2
         PS.BeadBorderColor x,11,0x000000
