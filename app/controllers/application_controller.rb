@@ -16,7 +16,7 @@ class ApplicationController < ActionController::Base
       render :file => 'app/assets/javascripts/Toys/Rorschach.js',:layout => false
     else
       @game = "Rorschach"
-      @script = '/assets/Toys/Rorschach.js?body=1'
+      @script = '/rorschach.js?body=1'
       render '/game.html.haml',:layout => false
     end
   end
