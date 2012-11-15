@@ -12,6 +12,4 @@
 //
 //= require jquery
 //= require jquery_ujs
-//= require ps2.2.dna.js
 //= require dna.music.js
-//= require_tree .

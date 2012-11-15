@@ -1,0 +1,21 @@
+%head
+  %title= @game
+  %meta{:charset => "utf-8"}/
+  %meta{:content => "IE=edge,chrome=1", "http-equiv" => "X-UA-Compatible"}
+  %meta{:content => "Perlenspiel 2.2", :name => "description"}
+  %link{:href => "http://users.wpi.edu/~bmoriarty/ps/ps.css", :rel => "stylesheet", :type => "text/css"}
+    %script{:src => "http://users.wpi.edu/~bmoriarty/ps/ps2.2.js", :type => "text/javascript"}
+  = javascript_include_tag "application"
+
+%body{:onkeydown => "return PS.SysKeyDown(event);", :onkeyup => "return PS.SysKeyUp(event);", :onload => "PS.Sys();"}
+  #main
+    %input#status{:name => "status", :readonly => "", :type => "text", :value => "Perlenspiel"}
+    %canvas#screen{:height => "480", :name => "screen", :width => "480"} No HTML5 canvas!
+    %p#footer{:name => "footer"} V
+  #debug{:name => "debug", :style => "display: none;"}
+    %textarea#monitor{:cols => "57", :name => "monitor", :readonly => "", :rows => "8", :wrap => "soft"}
+      :preserve
+    %script{:src => @script, :type => "text/javascript"}
+
+
+  %p Place a ".js" at the end of the url for source code.

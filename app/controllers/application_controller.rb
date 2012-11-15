@@ -15,7 +15,9 @@ class ApplicationController < ActionController::Base
     if params[:format] == 'js'
       render :file => 'app/assets/javascripts/Toys/Rorschach.js',:layout => false
     else
-      render '/Toys/rorscharch.html.haml'
+      @game = "Rorschach"
+      @script = '/assets/Toys/Rorschach.js?body=1'
+      render '/game.html.haml',:layout => false
     end
   end
 
@@ -23,15 +25,19 @@ class ApplicationController < ActionController::Base
     if params[:format] == 'js'
       render :file => 'app/assets/javascripts/Toys/flowers.js'
     else
-      render '/Toys/flowers.html.haml'
+      @game = "Flowers"
+      @script = '/assets/Toys/flowers.js?body=1'
+      render '/game.html.haml',:layout => false
     end
   end
 
   def rubik
     if params[:format] == 'js'
-      render :file => 'app/assets/javascripts/Toys/ribik.js'
+      render :file => 'app/assets/javascripts/Toys/Rubik.js'
     else
-      render '/Toys/rubik.html.haml'
+      @game = "Rubik's Cube"
+      @script = '/assets/Toys/Rubik.js?body=1'
+      render '/game.html.haml',:layout => false
     end
   end
 
@@ -39,7 +45,9 @@ class ApplicationController < ActionController::Base
     if params[:format] == 'js'
       render :file => 'app/assets/javascripts/Toys/composer.js'
     else
-      render '/Toys/composer.html.haml'
+      @game = "Composer"
+      @script = '/assets/Toys/composer.js?body=1'
+      render '/game.html.haml',:layout => false
     end
   end
 
@@ -47,7 +55,9 @@ class ApplicationController < ActionController::Base
     if params[:format] == 'js'
       render :file => 'app/assets/javascripts/Toys/letterpop.js'
     else
-      render '/Toys/letterpop.html.haml'
+      @game = "Letter Pop"
+      @script = '/assets/Toys/letterpop.js?body=1'
+      render '/game.html.haml',:layout => false
     end
   end
 
@@ -56,7 +66,9 @@ class ApplicationController < ActionController::Base
     if params[:format] == 'js'
       render :file => 'app/assets/javascripts/Toys/fountainoflife.js'
     else
-      render '/Toys/fountainoflife.html.haml'
+      @game = "The Fountain of Life"
+      @script = '/assets/Toys/fountainoflife.js?body=1'
+      render '/game.html.haml',:layout => false
     end
   end
 
@@ -65,7 +77,9 @@ class ApplicationController < ActionController::Base
     if params[:format] == 'js'
       render :file => 'app/assets/javascripts/Toys/peterstoy.js'
     else
-      render '/Toys/peterstoy.html.haml'
+      @game = "Peter's Toy"
+      @script = '/assets/Toys/peterstoy.js?body=1'
+      render '/game.html.haml',:layout => false
     end
   end
 
@@ -74,7 +88,10 @@ class ApplicationController < ActionController::Base
     if params[:format] == 'js'
       render :file => 'app/assets/javascripts/Puzzles/TheLabyrinthp' + params[:patch] + '.js'
     else
-      render '/Puzzles/TheLabyrinthp' + params[:patch] + '.html.haml'
+      @patch = params[:patch]
+      @game = 'The Labyrinth'
+      @script = '/assets/Puzzles/TheLabyrinthp' + params[:patch] + '.js?body=1'
+      render '/game.html.haml',:layout => false
     end
   end
   def wordwars
@@ -82,12 +99,16 @@ class ApplicationController < ActionController::Base
       render :file => 'app/assets/javascripts/Games/WordWars.' + params[:patch] + '.js'
     else
       @patch = params[:patch]
-      render '/Games/WordWars.html.haml'
+      @game = 'ASCii Wars'
+      @script = '/assets/Games/WordWars.' + params[:patch] + '.js?body=1'
+      render '/game.html.haml',:layout => false
     end
   end
+
   def dictionary
     render '/Games/dict.txt',:layout => false
   end
+
   def word_wars_ai_script
     render '/Games/' + params[:script] + '.txt',:layout => false
   end

@@ -37,7 +37,7 @@ var PS = {
     ALL: "ALL", // Use all rows or columns
     EMPTY: "EMPTY", // default bead state (color unassigned)
 
-    CANVAS_SIZE: 600, // max width/height of canvas
+    CANVAS_SIZE: 480, // max width/height of canvas
     GRID_MAX: 64, // max x/y dimensions of grid
     GRID_DEFAULT_WIDTH: 8,
     GRID_DEFAULT_HEIGHT: 8,
