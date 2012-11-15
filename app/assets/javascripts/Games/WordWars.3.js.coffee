@@ -176,13 +176,13 @@ jQuery ->
               east = -1
               west = -1
               if within_Board(x,y-1)
-                north = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y-1)) + m + 1 if (GAME.Board.Data[x][y-1].ocupied == 0) or (GAME.Board.Data[x][y-1].ocupied.player != @player and GAME.Board.Data[x][y-1].ocupied.player != 'world')
+                north = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y-1)) + m + 1 if (GAME.Board.Data[x][y-1].ocupied == 0) or (GAME.Board.Data[x][y-1].ocupied.player != @player and GAME.Board.Data[x][y-1].ocupied.player != 'world') or (GAME.Board.Data[x][y-1].ocupied.kind == 'a')
               if within_Board(x,y+1)
-                south = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y+1)) + m + 1 if (GAME.Board.Data[x][y+1].ocupied == 0) or (GAME.Board.Data[x][y+1].ocupied.player != @player and GAME.Board.Data[x][y+1].ocupied.player != 'world')
+                south = Math.abs(@dest.x - x) + Math.abs(@dest.y - (y+1)) + m + 1 if (GAME.Board.Data[x][y+1].ocupied == 0) or (GAME.Board.Data[x][y+1].ocupied.player != @player and GAME.Board.Data[x][y+1].ocupied.player != 'world') or (GAME.Board.Data[x][y+1].ocupied.kind == 'a')
               if within_Board(x+1,y)
-                east = Math.abs(@dest.x - (x+1)) + Math.abs(@dest.y - y) + m + 1 if (GAME.Board.Data[x+1][y].ocupied == 0) or (GAME.Board.Data[x+1][y].ocupied.player != @player and GAME.Board.Data[x+1][y].ocupied.player != 'world')
+                east = Math.abs(@dest.x - (x+1)) + Math.abs(@dest.y - y) + m + 1 if (GAME.Board.Data[x+1][y].ocupied == 0) or (GAME.Board.Data[x+1][y].ocupied.player != @player and GAME.Board.Data[x+1][y].ocupied.player != 'world') or (GAME.Board.Data[x+1][y].ocupied.kind == 'a')
               if within_Board(x-1,y)
-                west = Math.abs(@dest.x - (x-1)) + Math.abs(@dest.y - y) + m + 1 if (GAME.Board.Data[x-1][y].ocupied == 0) or (GAME.Board.Data[x-1][y].ocupied.player != @player and GAME.Board.Data[x-1][y].ocupied.player != 'world')
+                west = Math.abs(@dest.x - (x-1)) + Math.abs(@dest.y - y) + m + 1 if (GAME.Board.Data[x-1][y].ocupied == 0) or (GAME.Board.Data[x-1][y].ocupied.player != @player and GAME.Board.Data[x-1][y].ocupied.player != 'world') or (GAME.Board.Data[x-1][y].ocupied.kind == 'a')
 
               apple[String(x+','+(y-1))] = {v: north, moves: m+1,history: hi+'n',explored: false} if north != -1 and (apple[String(x+','+(y-1))] is undefined or apple[String(x+','+(y-1))].v > north )
               apple[String(x+','+(y+1))] = {v: south, moves: m+1,history: hi+'s',explored: false} if south != -1 and (apple[String(x+','+(y+1))] is undefined or apple[String(x+','+(y+1))].v > south )
@@ -353,6 +353,7 @@ jQuery ->
 
     class AI
       constructor: () ->
+        @scale = 1
         @id = -1
         @min_p = 4
         @next_build = {p: 0.33,d: 0.33,a: 0.33}
@@ -423,8 +424,8 @@ jQuery ->
           if options.length > 0
             if GAME.Comp.Credits >= 2
               nb = 'p'
-              nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p or my_a / (my_a+my_d+my_p) < @next_build.a
-              nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a or my_d / (my_a+my_d+my_p) < @next_build.d
+              nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p or my_a < @next_build.a * @scale
+              nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a or my_d < @next_build.d * @scale
               nb = 'p' if my_p <= @min_p
               GAME.Comp.Credits -= 1
               GAME.Comp.Credits -= 1 if nb == 'a'
@@ -433,9 +434,10 @@ jQuery ->
               nb.dest.x = loc.x
               nb.dest.y = loc.y
               GAME.Board.Data[nb.x][nb.y].ocupied = nb
-            #if my_a / (my_a+my_d+my_p) > @next_build.a and my_a > 1
+            if my_a > @next_build.a * @scale and my_a > 1
+              @scale += 1
               ###PS.Debug 'forced attack because i have to many A ('+ my_a / (my_a+my_d+my_p) + ' > '+  @next_build.a + '\n'  ###
-              #force_attack = true
+              force_attack = true
             if (their_a+their_d+their_p) < my_a
               ### PS.Debug 'forced attack because they have less buildings then i do attackers\n' ###
               force_attack = true
@@ -577,6 +579,7 @@ jQuery ->
           PS.Clock 0
           GAME.Comp.AI.report(1) if G.Mode == 'play'
           G.Mode = 'home'
+          PS.AudioPlay 'fx_wilhelm'
           PS.BeadData PS.ALL,PS.ALL,0
           t = '☠ You Lost ☠'
           x = Math.floor((G.GRID.WIDTH-t.length) / 2)
@@ -600,6 +603,7 @@ jQuery ->
           GAME.Comp.AI.report(0) if G.Mode == 'play'
           G.Mode = 'home'
           PS.BeadData PS.ALL,PS.ALL,0
+          PS.AudioPlay 'fx_tada'
           t = '♕ You Won ♕'
           x = Math.floor((G.GRID.WIDTH-t.length) / 2)
           for ti in t
@@ -1071,11 +1075,11 @@ jQuery ->
     TUT =
       current_step: 0
       current_tip: 0
-      tips: [{tip: ['The bar at the bottom shows main game controls.','$ are used to build units.','⚒ units produce income.','To build one click on the icon then in the feild.','Units can only be built adjesent stationary alies.'],done: false},
-             {tip: ['♜ units are defencive and can not move.','Build one now.'],done: false},
-             {tip: ['♞ units are affencive and can move.','Build one now.'], done: false},
-             {tip: ['To move a ♞ click on it.','Then click where you want it to move.'], done: false}
-              {tip: ['Now that we know the basics defeate red','To build faster use a-♞, s-⚒,d-♜','click and drag to select multiple units'], done: false}
+      tips: [{tip: ['The bar at the bottom shows main game controls.','$ are used to build units.','⚒ units produce income.','To build one click on the icon, then in the field.','Units can only be built adjacent to stationary allies.'],done: false},
+              {tip: ['♜ units are defensive and can not move.','Build one now.'],done: false},
+              {tip: ['♞ units are offensive and can move.','Build one now.'], done: false},
+              {tip: ['To select a ♞ click on it.','Then to move it, click another square.'], done: false}
+              {tip: ['Now that we know the basics, defeat red.','To build faster use the hotkeys: a->♞, s->⚒, d->♜','Click and drag to select multiple units.'], done: false}
             ]
     Settings =
       Board:
@@ -1151,26 +1155,7 @@ jQuery ->
           ([0,0,0,0,0,0,0,0,2,2,2,0,0,0,0,0]),
           ([0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0])
         ]
-      Zig_Zag: #name of level (_ instead of Space) limit 10 characters
-        w: 15 #needs to be one less than actual  (or start cound at 0)
-        h: 14
-        data: [  #1 => water,2 => rock, 0 => grass, b => blue start, r => red start red gets a D up and to the left one
-          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
-          ([0,b,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
-          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
-          ([2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0]),
-          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
-          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
-          ([0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1]),
-          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
-          ([1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0]),
-          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
-          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
-          ([0,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2]),
-          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
-          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,r,0]),
-          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-        ]
+
       The_Island: #name of level (_ instead of Space) limit 10 characters
         w: 15 #needs to be one less than actual  (or start cound at 0)
         h: 14
@@ -1192,6 +1177,69 @@ jQuery ->
           ([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1])
         ]
 
+      Island_Chain:
+        w: 15
+        h: 14
+        data: [
+          ([b,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1]),
+          ([0,0,0,1,1,1,1,1,1,1,0,0,2,2,1,1]),
+          ([0,0,1,1,1,1,0,0,0,0,0,0,0,2,2,1]),
+          ([0,1,1,1,0,0,0,1,1,1,0,0,0,0,2,1]),
+          ([0,1,1,0,0,0,0,0,1,1,1,0,0,2,1,1]),
+          ([0,0,1,0,0,0,0,1,1,1,1,1,0,1,1,1]),
+          ([0,0,0,0,0,0,1,1,1,1,1,1,0,1,1,1]),
+          ([0,0,1,1,1,1,1,1,1,1,2,0,0,0,1,1]),
+          ([1,1,1,1,1,0,0,0,2,2,2,0,0,0,0,1]),
+          ([1,1,1,1,0,0,0,0,0,2,0,0,0,0,0,1]),
+          ([0,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1]),
+          ([0,0,0,0,1,1,1,1,1,0,0,1,1,1,1,1]),
+          ([0,0,0,0,1,1,1,1,1,0,1,1,1,1,1,1]),
+          ([0,0,0,0,0,1,1,1,0,0,0,1,1,1,1,1]),
+          ([0,r,0,0,0,0,0,0,0,0,1,1,1,1,1,1])
+        ]
+
+      Battlefield:
+        w:15
+        h:14
+        data: [
+          ([b,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0]),
+          ([0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0]),
+          ([0,0,0,1,1,1,1,0,0,0,0,0,0,1,0,1]),
+          ([0,1,1,1,1,1,0,0,0,0,0,2,1,1,0,0]),
+          ([0,0,1,1,1,1,0,0,0,0,2,2,1,0,0,0]),
+          ([0,0,1,1,0,0,0,0,0,0,0,1,1,0,0,0]),
+          ([0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0]),
+          ([0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0]),
+          ([0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0]),
+          ([0,0,0,1,1,1,1,2,2,0,0,0,0,0,0,0]),
+          ([1,0,1,1,0,0,2,2,0,0,2,2,2,2,0,0]),
+          ([0,0,0,0,0,0,0,0,0,0,2,1,1,1,1,0]),
+          ([0,0,0,0,0,0,0,0,0,2,2,1,0,0,0,0]),
+          ([0,0,0,0,0,0,0,0,0,2,2,1,0,0,0,0]),
+          ([0,0,0,0,0,0,0,0,2,2,2,1,0,0,0,r])
+        ]
+
+      Last_Stand:
+        w:15
+        h:14
+        data: [
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([0,r,0,0,0,0,0,0,0,0,0,0,0,0,r,0]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+          ([0,0,0,0,0,0,0,2,0,0,0,2,0,0,0,0]),
+          ([0,0,0,0,0,2,2,2,2,2,0,2,2,0,0,0]),
+          ([0,0,0,0,2,2,0,0,0,2,0,0,0,0,0,0]),
+          ([0,0,2,0,2,0,0,b,0,0,0,2,0,0,0,0]),
+          ([0,0,2,0,0,0,b,2,b,0,2,2,0,0,0,0]),
+          ([0,0,2,2,0,0,0,b,0,0,2,0,0,0,0,0]),
+          ([0,0,0,2,0,0,0,0,0,2,2,0,0,0,0,0]),
+          ([0,0,0,2,2,0,0,0,2,2,0,0,0,0,0,0]),
+          ([0,0,0,0,2,2,0,0,0,0,0,0,0,0,0,0]),
+          ([0,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0]),
+          ([0,r,0,0,0,0,2,2,2,0,0,0,0,0,r,0]),
+          ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]),
+        ]
+
     ###------------------------------------------ PS Events ----------------------------------------- ###
     PS.Init = ->
       PS.GridSize G.GRID.WIDTH, G.GRID.HEIGHT+1
@@ -1211,6 +1259,7 @@ jQuery ->
     PS.Click = (x, y, data) ->
       "use strict"
       if typeof data == "function"
+        PS.AudioPlay 'fx_click'
         if G.Mode == 'home'
           data('click',x,y)
         else
