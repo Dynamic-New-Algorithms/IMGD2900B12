@@ -9,7 +9,7 @@ class AsciiaiController < ApplicationController
         ir_d = rand(100-ir_a)
         ir_p = 1 - ir_a - ir_d
         min_p = rand(10)
-        attack_timing = rand(17940) + 60
+        attack_timing = rand(7200) + 60
         new_ai.ir_a = ir_a/100.0
         new_ai.ir_d = ir_d/100.0
         new_ai.ir_p = ir_p/100.0

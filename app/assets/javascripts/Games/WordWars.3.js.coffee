@@ -284,6 +284,15 @@ jQuery ->
           x = @x - GAME.Off_Set.x
           y = @y - GAME.Off_Set.y
           PS.BeadColor x,y,@color
+          ###
+          if @kind == 'w'
+            PS.BeadGlyph x,y,'≈'
+            PS.BeadGlyphColor x,y,0x0000ff
+          else if @kind == 'm'
+            PS.BeadGlyph x,y,'∆'
+            PS.BeadGlyphColor x,y,0x000000
+          ###
+
       move: () ->
         a = 0
 
@@ -344,6 +353,12 @@ jQuery ->
 
     class AI
       constructor: () ->
+        @id = -1
+        @min_p = 4
+        @next_build = {p: 0.33,d: 0.33,a: 0.33}
+        @attack_feq = 600
+        @last_p_count = 0
+        @last_d_cound = 0
         url = "/asciiai/get"
         json = 'nothing'
         $.ajax
@@ -354,28 +369,31 @@ jQuery ->
           dataType: "json"
           success: (d) ->
             json = d
-        p = json.ir_p
-        d = json.ir_d
-        a = json.ir_a
-        @id = json.id
-        @min_p = json.min_p
-        @next_build = {p: p,d: d,a: a}
-        @attack_feq = json.attack_timing
-        @last_p_count = 0
-        @last_d_cound = 0
+        if json != 'nothing'
+          p = json.ir_p
+          d = json.ir_d
+          a = json.ir_a
+          @id = json.id
+          @min_p = json.min_p
+          @next_build = {p: p,d: d,a: a}
+          @attack_feq = json.attack_timing
+          @last_p_count = 0
+          @last_d_cound = 0
 
       report: (win) ->
-        win = 0 if G.Tick < 600
-        url = "/asciiai/update"
-        json = 'nothing'
-        $.ajax
-          async: false
-          global: false
-          data: {id: @id, win: win}
-          url: url
-          dataType: "json"
+        if @id >= 0
+          win = 0 if G.Tick < 180
+          url = "/asciiai/update"
+          json = 'nothing'
+          $.ajax
+            async: false
+            global: false
+            data: {id: @id, win: win}
+            url: url
+            dataType: "json"
 
       think: () ->
+
         force_attack = false
         if GAME.Comp.Credits >= 2 or G.Tick % 15 == 0
           their_a = 0
@@ -405,8 +423,8 @@ jQuery ->
           if options.length > 0
             if GAME.Comp.Credits >= 2
               nb = 'p'
-              nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p and my_a / (my_a+my_d+my_p) < @next_build.a
-              nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a and my_d / (my_a+my_d+my_p) < @next_build.d
+              nb = 'a' if their_p / (their_a+their_d+their_p) > @next_build.p or my_a / (my_a+my_d+my_p) < @next_build.a
+              nb = 'd' if their_a / (their_a+their_d+their_p) > @next_build.a or my_d / (my_a+my_d+my_p) < @next_build.d
               nb = 'p' if my_p <= @min_p
               GAME.Comp.Credits -= 1
               GAME.Comp.Credits -= 1 if nb == 'a'
@@ -415,10 +433,18 @@ jQuery ->
               nb.dest.x = loc.x
               nb.dest.y = loc.y
               GAME.Board.Data[nb.x][nb.y].ocupied = nb
-            force_attack = true if my_a / (my_a+my_d+my_p) > @next_build.a or (their_a+their_d+their_p) < my_a or my_p < @last_p_count or my_d < @last_d_count
+            #if my_a / (my_a+my_d+my_p) > @next_build.a and my_a > 1
+              ###PS.Debug 'forced attack because i have to many A ('+ my_a / (my_a+my_d+my_p) + ' > '+  @next_build.a + '\n'  ###
+              #force_attack = true
+            if (their_a+their_d+their_p) < my_a
+              ### PS.Debug 'forced attack because they have less buildings then i do attackers\n' ###
+              force_attack = true
+            if my_p < @last_p_count or my_d < @last_d_count
+              ### PS.Debug 'forced attack because being attacked\n'   ###
+              force_attack = true
             @last_p_count = my_p
             @last_d_count = my_d
-        if G.Tick % @attack_feq == 0 or force_attack
+        if (G.Tick % @attack_feq == 0 or force_attack) and G.Tick > 60
           move_op = []
           my_a = []
           for x in [0..GAME.Board.Width]
@@ -432,10 +458,12 @@ jQuery ->
                 move_op.push({x: x,y: y})
               else if GAME.Board.Data[x][y].ocupied != 0 and  GAME.Board.Data[x][y].ocupied.player == 'comp' and  GAME.Board.Data[x][y].ocupied.kind == 'a'
                 my_a.push({x: x,y: y})
-          for a in my_a
-            d = move_op[Math.floor(Math.random()*(move_op.length))]
-            GAME.Board.Data[a.x][a.y].ocupied.dest.x = d.x
-            GAME.Board.Data[a.x][a.y].ocupied.dest.y = d.y
+
+          if my_a.length > 0 and move_op.length > 0
+            for a in my_a
+              d = move_op[Math.floor(Math.random()*(move_op.length))]
+              GAME.Board.Data[a.x][a.y].ocupied.dest.x = d.x
+              GAME.Board.Data[a.x][a.y].ocupied.dest.y = d.y
 
 
     ###------------------------------------------ Helper functions ----------------------------------------- ###
@@ -531,34 +559,64 @@ jQuery ->
 
 
     move_game= () ->
-      
       player_unit_count = 0
       comp_unit_count = 0
+      empty = 0
       for x in [0..GAME.Board.Width]
         for y in [0..GAME.Board.Height]
           if GAME.Board.Data[x][y].ocupied != 0
-            
             if GAME.Board.Data[x][y].ocupied.has_moved == false
-              
               GAME.Board.Data[x][y].ocupied.move()
-            
             player_unit_count += 1 if GAME.Board.Data[x][y].ocupied.player == 'player'
-            
             comp_unit_count += 1 if GAME.Board.Data[x][y].ocupied.player == 'comp'
+          else
+            empty += 1
             
       if G.Mode == 'play' or (G.Mode == 'tutorial' and TUT.current_step == 4)
-        if player_unit_count == 0
+        if player_unit_count == 0  or (empty <= 2 and player_unit_count < comp_unit_count)
           PS.Clock 0
-          alert 'Loser'
           GAME.Comp.AI.report(1) if G.Mode == 'play'
           G.Mode = 'home'
-          PS.Init()
-        if comp_unit_count == 0
+          PS.BeadData PS.ALL,PS.ALL,0
+          t = '☠ You Lost ☠'
+          x = Math.floor((G.GRID.WIDTH-t.length) / 2)
+          for ti in t
+            PS.BeadColor x, Math.floor((G.GRID.HEIGHT) / 2), 0xffffff
+            PS.BeadBorderWidth x,Math.floor((G.GRID.HEIGHT) / 2),0
+            PS.BeadGlyphColor x,Math.floor((G.GRID.HEIGHT) / 2),0x000000
+            PS.BeadGlyph x,Math.floor((G.GRID.HEIGHT) / 2), ti
+            PS.BeadData x,Math.floor((G.GRID.HEIGHT) / 2), (event,x,y) ->
+              if event == 'enter'
+                PS.BeadColor x,y,0xdddd00
+              else if event == 'leave'
+                PS.BeadColor x,y,0xffffff
+              else if event == 'click'
+                G.Mode = 'home'
+                PS.Init()
+            x += 1
+        if comp_unit_count == 0 or (empty <= 2 and player_unit_count > comp_unit_count)
+
           PS.Clock 0
-          alert 'Winner'
           GAME.Comp.AI.report(0) if G.Mode == 'play'
           G.Mode = 'home'
-          PS.Init()
+          PS.BeadData PS.ALL,PS.ALL,0
+          t = '♕ You Won ♕'
+          x = Math.floor((G.GRID.WIDTH-t.length) / 2)
+          for ti in t
+            PS.BeadColor x, Math.floor((G.GRID.HEIGHT) / 2), 0xffffff
+            PS.BeadBorderWidth x,Math.floor((G.GRID.HEIGHT) / 2),0
+            PS.BeadGlyphColor x,Math.floor((G.GRID.HEIGHT) / 2),0x000000
+            PS.BeadGlyph x,Math.floor((G.GRID.HEIGHT) / 2), ti
+            PS.BeadData x,Math.floor((G.GRID.HEIGHT) / 2), (event,x,y) ->
+              if event == 'enter'
+                PS.BeadColor x,y,0xdddd00
+              else if event == 'leave'
+                PS.BeadColor x,y,0xffffff
+              else if event == 'click'
+                G.Mode = 'home'
+                PS.Init()
+            x += 1
+
 
       
       if GAME.Board.Bullets.length > 0
@@ -632,11 +690,53 @@ jQuery ->
         PS.BeadGlyphColor x,G.GRID.HEIGHT,0x000000
         PS.BeadGlyph x,G.GRID.HEIGHT, 0
 
-      PS.BeadGlyph 0,G.GRID.HEIGHT,'$'
-      c = GAME.Player.Credits
-      PS.BeadGlyph 1,G.GRID.HEIGHT, String(Math.floor(c/100))
-      PS.BeadGlyph 2,G.GRID.HEIGHT, String(Math.floor((c - Math.floor(c/100)*100) / 10))
-      PS.BeadGlyph 3,G.GRID.HEIGHT, String(Math.floor(c) - (Math.floor((c - Math.floor(c/100)*100) / 10))*10 - Math.floor(c/100)*100)
+      PS.BeadGlyph 1,G.GRID.HEIGHT,'$'
+      c = Math.min(99,GAME.Player.Credits)
+      PS.BeadGlyph 2,G.GRID.HEIGHT, String(Math.floor((c) / 10))
+      PS.BeadGlyph 3,G.GRID.HEIGHT, String(Math.floor((c - Math.floor((c) / 10))))
+      dec = ['.','⅛','¼','⅜','½','⅝','¾','⅞']
+      PS.BeadGlyph 4,G.GRID.HEIGHT, dec[Math.floor((c - Math.floor((c - Math.floor((c) / 10)))) * 8)]
+
+      PS.BeadGlyph 0,G.GRID.HEIGHT,'■'
+      PS.BeadData 0,G.GRID.HEIGHT, (xx,yy) ->
+        PS.Clock 0
+        for x in [0..(G.GRID.WIDTH-1)]
+          for y in [0..(G.GRID.HEIGHT)]
+            c = Math.floor(Math.random()*100)+50
+            PS.BeadColor x,y,c,c,c
+            PS.BeadBorderWidth x,y,0
+            PS.BeadGlyph x,y,0
+            PS.BeadData x,y,0
+        t = 'Paused'
+        x = Math.floor((G.GRID.WIDTH - t.length) / 2)
+        for ti in t
+          PS.BeadColor x,4,0xffffff
+          PS.BeadGlyphColor x,4,0x000000
+          PS.BeadGlyph x,4,ti
+          x += 1
+        t = 'Resume'
+        x = Math.floor((G.GRID.WIDTH - t.length) / 2)
+        for ti in t
+          PS.BeadColor x,6,0xffffff
+          PS.BeadGlyphColor x,6,0x000000
+          PS.BeadGlyph x,6,ti
+          PS.BeadData x,6, (x,y) ->
+            PS.Clock 1
+          x += 1
+        t = 'Quit'
+        x = Math.floor((G.GRID.WIDTH - t.length) / 2)
+        for ti in t
+          PS.BeadColor x,8,0xffffff
+          PS.BeadGlyphColor x,8,0x000000
+          PS.BeadGlyph x,8,ti
+          PS.BeadData x,8, (x,y) ->
+            G.Mode = 'home'
+            PS.Init()
+          x += 1
+
+
+
+
 
       PS.BeadGlyph G.GRID.WIDTH-5,G.GRID.HEIGHT, '1'
       PS.BeadGlyph G.GRID.WIDTH-4,G.GRID.HEIGHT, '⚒'
@@ -678,6 +778,7 @@ jQuery ->
       PS.BeadBorderWidth PS.ALL,PS.ALL,0
       PS.BeadGlyphColor PS.ALL,PS.ALL,0x000000
       PS.BeadGlyph PS.ALL,PS.ALL,0
+      PS.BeadData PS.ALL,PS.ALL,0
 
       t = '♜ ASCii Wars ♜'
       x = Math.floor(((G.GRID.WIDTH - t.length)) / 2)
@@ -1111,7 +1212,7 @@ jQuery ->
       "use strict"
       if typeof data == "function"
         if G.Mode == 'home'
-          data('click')
+          data('click',x,y)
         else
           data(x,y)
       else if GAME.Player.Hover != 0
@@ -1178,7 +1279,7 @@ jQuery ->
       "use strict"
       if typeof data == "function"
         if G.Mode == 'home'
-          data('enter')
+          data('enter',xx,yy)
       GAME.Player.Last.x = xx
       GAME.Player.Last.y = yy
 
@@ -1221,7 +1322,7 @@ jQuery ->
       "use strict"
       if typeof data == "function"
         if G.Mode == 'home'
-          data('leave')
+          data('leave',x,y)
 
     PS.KeyDown = (key, shift, ctrl) ->
       "use strict"
