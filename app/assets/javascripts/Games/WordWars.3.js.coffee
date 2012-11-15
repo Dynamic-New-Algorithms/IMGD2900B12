@@ -360,6 +360,26 @@ jQuery ->
         @attack_feq = 600
         @last_p_count = 0
         @last_d_cound = 0
+        if Settings.AI == 'Rabbit'
+          @min_p = 4
+          @next_build = {p: 0.5,d: 0.25,a: 0.25}
+          @attack_feq = 600
+          @last_p_count = 0
+          @last_d_cound = 0
+        else if Settings.AI == 'Turtle'
+          @min_p = 4
+          @next_build = {p: 0.25,d: 0.5,a: 0.25}
+          @attack_feq = 600
+          @last_p_count = 0
+          @last_d_cound = 0
+        else if Settings.AI == 'Wolf'
+          @min_p = 4
+          @next_build = {p: 0.25,d: 0.25,a: 0.5}
+          @attack_feq = 600
+          @last_p_count = 0
+          @last_d_cound = 0
+
+        ###
         url = "/asciiai/get"
         json = 'nothing'
         $.ajax
@@ -380,6 +400,7 @@ jQuery ->
           @attack_feq = json.attack_timing
           @last_p_count = 0
           @last_d_cound = 0
+        ###
 
       report: (win) ->
         if @id >= 0
@@ -873,8 +894,7 @@ jQuery ->
         if event == 'click'
           Settings.Comp_Credits = Math.min(9,Settings.Comp_Credits+1)
           draw_home()
-
-      t = Settings.Map
+      t = 'AI-' + Settings.AI
       x = 2
       for ti in t
         PS.BeadGlyph x,8, ti
@@ -883,6 +903,22 @@ jQuery ->
       PS.BeadBorderColor x,8,0x000000
       PS.BeadGlyph x,8,'▶'
       PS.BeadData x,8, (event) ->
+        if event == 'click'
+          ais = ['Rabbit','Turtle','Wolf','Fish']
+          i = ais.indexOf(Settings.AI)
+          i = (i + 1) % ais.length
+          Settings.AI = ais[i]
+          draw_home()
+
+      t = Settings.Map
+      x = 2
+      for ti in t
+        PS.BeadGlyph x,9, ti
+        x += 1
+      PS.BeadBorderWidth x,9,2
+      PS.BeadBorderColor x,9,0x000000
+      PS.BeadGlyph x,9,'▶'
+      PS.BeadData x,9, (event) ->
         if event == 'click'
           my_index = -1
           names = []
@@ -898,35 +934,6 @@ jQuery ->
         t = 'Width'
         x = 4
         for ti in t
-          PS.BeadGlyph x,9, ti
-          x += 1
-        PS.BeadBorderWidth x,9,2
-        PS.BeadBorderColor x,9,0x000000
-        PS.BeadGlyph x,9,'◀'
-        PS.BeadData x,9, (event) ->
-          if event == 'click'
-            Settings.Board.Width = Math.max(15,Settings.Board.Width - 1)
-            draw_home()
-        x += 1
-        PS.BeadBorderWidth x,9,2
-        PS.BeadBorderColor x,9,0x000000
-        PS.BeadGlyph x,9,String(Math.floor(Settings.Board.Width / 10))
-        x += 1
-        PS.BeadBorderWidth x,9,2
-        PS.BeadBorderColor x,9,0x000000
-        PS.BeadGlyph x,9,String(Settings.Board.Width - 10*Math.floor(Settings.Board.Width / 10))
-        x += 1
-        PS.BeadBorderWidth x,9,2
-        PS.BeadBorderColor x,9,0x000000
-        PS.BeadGlyph x,9,'▶'
-        PS.BeadData x,9, (event) ->
-          if event == 'click'
-            Settings.Board.Width = Math.min(99,Settings.Board.Width + 1)
-            draw_home()
-
-        t = 'Height'
-        x = 4
-        for ti in t
           PS.BeadGlyph x,10, ti
           x += 1
         PS.BeadBorderWidth x,10,2
@@ -934,21 +941,50 @@ jQuery ->
         PS.BeadGlyph x,10,'◀'
         PS.BeadData x,10, (event) ->
           if event == 'click'
-            Settings.Board.Height = Math.max(14,Settings.Board.Height - 1)
+            Settings.Board.Width = Math.max(15,Settings.Board.Width - 1)
             draw_home()
         x += 1
-        PS.BeadBorderWidth x,10,2
+        PS.BeadBorderWidth x,19,2
         PS.BeadBorderColor x,10,0x000000
-        PS.BeadGlyph x,10,String(Math.floor(Settings.Board.Height / 10))
+        PS.BeadGlyph x,10,String(Math.floor(Settings.Board.Width / 10))
         x += 1
         PS.BeadBorderWidth x,10,2
         PS.BeadBorderColor x,10,0x000000
-        PS.BeadGlyph x,10,String(Settings.Board.Height - 10*Math.floor(Settings.Board.Height / 10))
+        PS.BeadGlyph x,10,String(Settings.Board.Width - 10*Math.floor(Settings.Board.Width / 10))
         x += 1
         PS.BeadBorderWidth x,10,2
         PS.BeadBorderColor x,10,0x000000
         PS.BeadGlyph x,10,'▶'
         PS.BeadData x,10, (event) ->
+          if event == 'click'
+            Settings.Board.Width = Math.min(99,Settings.Board.Width + 1)
+            draw_home()
+
+        t = 'Height'
+        x = 4
+        for ti in t
+          PS.BeadGlyph x,11, ti
+          x += 1
+        PS.BeadBorderWidth x,11,2
+        PS.BeadBorderColor x,11,0x000000
+        PS.BeadGlyph x,11,'◀'
+        PS.BeadData x,11, (event) ->
+          if event == 'click'
+            Settings.Board.Height = Math.max(14,Settings.Board.Height - 1)
+            draw_home()
+        x += 1
+        PS.BeadBorderWidth x,11,2
+        PS.BeadBorderColor x,11,0x000000
+        PS.BeadGlyph x,10,String(Math.floor(Settings.Board.Height / 10))
+        x += 1
+        PS.BeadBorderWidth x,11,2
+        PS.BeadBorderColor x,11,0x000000
+        PS.BeadGlyph x,11,String(Settings.Board.Height - 10*Math.floor(Settings.Board.Height / 10))
+        x += 1
+        PS.BeadBorderWidth x,11,2
+        PS.BeadBorderColor x,11,0x000000
+        PS.BeadGlyph x,11,'▶'
+        PS.BeadData x,11, (event) ->
           if event == 'click'
             Settings.Board.Height = Math.min(99,Settings.Board.Height + 1)
             draw_home()
@@ -956,45 +992,45 @@ jQuery ->
         t = 'Mountains'
         x = 4
         for ti in t
-          PS.BeadGlyph x,11, ti
-          x += 1
-        PS.BeadBorderWidth 3,11,2
-        PS.BeadBorderColor 3,11,0x000000
-        PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
-        PS.BeadData 3,11, (event) ->
-          if event == 'enter'
-            PS.BeadGlyph 3,11,'✔'
-          else if event == 'leave'
-            PS.BeadGlyph 3,11,' '
-            PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
-          else if event == 'click'
-            if Settings.Board.Mountains
-              Settings.Board.Mountains = false
-            else
-              Settings.Board.Mountains = true
-            PS.BeadGlyph 3,11,' '
-            PS.BeadGlyph 3,11,'✔' if Settings.Board.Mountains
-        t = 'Lakes'
-        x = 4
-        for ti in t
-          PS.BeadGlyph x,12 , ti
+          PS.BeadGlyph x,12, ti
           x += 1
         PS.BeadBorderWidth 3,12,2
         PS.BeadBorderColor 3,12,0x000000
-        PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
+        PS.BeadGlyph 3,12,'✔' if Settings.Board.Mountains
         PS.BeadData 3,12, (event) ->
           if event == 'enter'
             PS.BeadGlyph 3,12,'✔'
           else if event == 'leave'
             PS.BeadGlyph 3,12,' '
-            PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
+            PS.BeadGlyph 3,12,'✔' if Settings.Board.Mountains
+          else if event == 'click'
+            if Settings.Board.Mountains
+              Settings.Board.Mountains = false
+            else
+              Settings.Board.Mountains = true
+            PS.BeadGlyph 3,12,' '
+            PS.BeadGlyph 3,12,'✔' if Settings.Board.Mountains
+        t = 'Lakes'
+        x = 4
+        for ti in t
+          PS.BeadGlyph x,13 , ti
+          x += 1
+        PS.BeadBorderWidth 3,13,2
+        PS.BeadBorderColor 3,13,0x000000
+        PS.BeadGlyph 3,13,'✔' if Settings.Board.Lakes
+        PS.BeadData 3,13, (event) ->
+          if event == 'enter'
+            PS.BeadGlyph 3,13,'✔'
+          else if event == 'leave'
+            PS.BeadGlyph 3,13,' '
+            PS.BeadGlyph 3,13,'✔' if Settings.Board.Lakes
           else if event == 'click'
             if Settings.Board.Lakes
               Settings.Board.Lakes = false
             else
               Settings.Board.Lakes = true
-            PS.BeadGlyph 3,12,' '
-            PS.BeadGlyph 3,12,'✔' if Settings.Board.Lakes
+            PS.BeadGlyph 3,13,' '
+            PS.BeadGlyph 3,13,'✔' if Settings.Board.Lakes
 
 
     reset = () ->
@@ -1089,6 +1125,7 @@ jQuery ->
         Lakes: false
       Player_Credits: 4
       Comp_Credits: 2
+      AI: 'Fish'
       Map: 'Great_Lake'
     GAME =
       Off_Set:
