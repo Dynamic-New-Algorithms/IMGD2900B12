@@ -112,4 +112,15 @@ class ApplicationController < ActionController::Base
   def word_wars_ai_script
     render '/Games/' + params[:script] + '.txt',:layout => false
   end
+
+  def stcukinthevoid
+    if params[:format] == 'js'
+      render :file => 'app/assets/javascripts/Games/StuckInTheVoid.' + params[:patch] + '.js'
+    else
+      @patch = params[:patch]
+      @game = 'ASCii Wars'
+      @script = '/stuckinthevoid/' + params[:patch] + '.js?body=1'
+      render '/game.html.haml',:layout => false
+    end
+  end
 end

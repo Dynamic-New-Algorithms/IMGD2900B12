@@ -20,6 +20,8 @@ WebSite::Application.routes.draw do
   match '/wordwars/ai/:script' => 'application#word_wars_ai_script'
   match '/asciiai/get' => 'asciiai#get'
   match '/asciiai/update' => 'asciiai#update'
+
+  match '/stuckinthevoid/:patch' => 'application#stcukinthevoid', :constraints => { :patch => /\d*/ }
   # The priority is based upon order of creation:
   # first created -> highest priority.
 
