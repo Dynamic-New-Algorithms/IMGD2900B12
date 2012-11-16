@@ -49,7 +49,8 @@ PS.Init = ->
   PS.BeadBorderWidth PS.ALL,PS.ALL,0
   PS.GridBGColor 0x0000
   PS.StatusFade false
-  PS.StatusText 'Stuck in the Void'
+  PS.StatusText 'Stuck in the Void: toy 1'
+  PS.StatusColor(0xffffff)
 
   PS.BeadColor 1,1,Math.floor(255*f(x)),Math.floor(255*(1-f(x))),0
   PS.BeadBorderColor 1,1, 0x000000
