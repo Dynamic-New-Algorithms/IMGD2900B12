@@ -118,7 +118,7 @@ class ApplicationController < ActionController::Base
       render :file => 'app/assets/javascripts/Games/StuckInTheVoid.' + params[:patch] + '.js'
     else
       @patch = params[:patch]
-      @game = 'ASCii Wars'
+      @game = 'Stuck in the Void'
       @script = '/stuckinthevoid/' + params[:patch] + '.js?body=1'
       render '/game.html.haml',:layout => false
     end
