@@ -6,31 +6,76 @@
 %h2 Summary
 %p
   :markdown
-    In the beginning, before the land and sea, before the sun and stars; there was darkness and it was not alone. And
-    they have returned and light no longer frightens them.  We are now trapped in the void of darkness and can only run.
+    In the beginning, before the land and sea, before the sun and stars; there was darkness and it was not alone.
+    They have returned and light no longer frightens them.  We are now trapped in the void of darkness and can only run.
 
 %h2 Game play description
 %p
   :markdown
-    Trapped in the void is an first person point and click adventure game.  Where the player can't fight the monsters that
-    lurk around every corner. Armed only with a flash light to guid your way, which only increases the danger.  The flash light
-    mechanic can be viewed [here](/stuckinthevoid/4).  The goal of this game is to build tension as the monsters which the play can
-    only run from, to achieve this we plan on implementing a heartbeat animation, this can be viewed [here](/stuckinthevoid/1).  By
-    building a first person perspective using these tools [here](/stuckinthevoid/3) and [here](/stuckinthevoid/6).  There is the idea that
-    some doors will be locked and require the player to complete a mini game which has not been fully decided on but a mechanic of
-    picking up and putting down thing as seen [here](/stuckinthevoid/2).
+    Trapped in the void is a first person point and click adventure game.  Where the player can't fight the monsters that
+    lurk around every corner. Armed only with a flash light to guide your way, which only increases the danger. </br>
+     </br>
+    The flash light is the player's primary means of exploring the world.  It is your only light source, but some
+    monsters will be attracted by its use.  This endeavors to increase the uncertainty in the world (for increased
+    tension and immersion), and to add a system of risk to the gameplay, because you can't defend yourself against the
+    monsters that you attract.  The flash light mechanic can be viewed [here](/stuckinthevoid/4).  </br>
+     </br>
+    The goal of this game is to be a tense, atmospheric experience.  To build tension -- and because the sound of a
+    heartbeat inherently draws in the player and makes them feel more in tune with the character they're playing as --
+    we designed a heartbeat system.  This consists of a pulsing red bead, which can speed up or slow down depending on
+    the events and circumstances in the game.  This is accompanied by a heartbeat sound that matches the tempo of the
+    beating "heart."  This animation can be viewed [here](/stuckinthevoid/1). </br>
+     </br>
+    One of the biggest challenges of building this game is making a 32 x 32 grid of flat pixels appear three-dimensional.
+    We attempted to overcome this obstacle by building an environment from a set of individual pieces, which will be
+    overlaid on top of each other to create the illusion of three dimensions.  In ths way we can also define an entire
+    world that the player will move around in, without having to draw each room individually, instead drawing room
+    components and stitching them together to create a larger environment.  You can see some of the tools we used
+    [here](/stuckinthevoid/3) and [here](/stuckinthevoid/6).  </br>
+     </br>
+    There will be clues hidden around the world, both in the form of items that will guide the player along the path of
+    the story, and notes that will provide hints as to the dark and violent backstory of this apocalyptic world.  These
+    items will be able to be picked up, which will be represented by a tool we developed to give the illusion of a
+    bead increasing in size (or getting closer to the player).  This tool can be seen [here](/stuckinthevoid/2).   </br>
+     </br>
+    At some points -- most notably the beginning and end of the game -- the player will be given parts of the story, to
+    both increase immersion and help them understand what is going on.  These will be delivered in the form of self-typing
+    'cutscene' text.  An example of this can be viewed [here](/stuckinthevoid/5).
 
 %h2 Game ending
 %p
   :markdown
-    Unknown at this point
+    The goal of the game is to escape the monsters and turn on the defense mechanism that is in place in the building.
+    This is done by flipping an undecided amount of switches, then returning to the center of the building and flipping
+    the master switch.  Once this is done, victory will have been achieved, and the player will be rewarded with a
+    conclusion.  This will come in the form of more self-typing text, which will be a message from the character to
+    anyone still alive in the void.
 
 %h2 Project plan
 %p
   :markdown
-    The goal is to by thanksgiving have all the mechanics of the game running smoothly and allow us to start generating story and refine game play.
-    Several prototypes have been built the challenge moving forward is not to get Perlenspiel to do what we want but how the asset pipeline will function.
-    Because rooms need to be drawn, and the world in which the game takes place needs to be able to incorporate new rooms and objects.  In many ways the
-    story of this game is much more important than anything.
-
-
+    By class on Monday the 19th, we will have this treatment done!  We will also have several prototypes of the various
+    features / proofs of concepts, which will be linked in the web version of this treatment. </br>
+     </br>
+    By the start of Thanksgiving break, we will have one set of floor / walls, with which we will test the game and start
+    building the levels.  </br>
+     </br>
+    Over break, Peter will create more wall and floor and object types (and monsters), and Bill will build and optimize
+    the engine.  We will also implement sound and music.  </br>
+     </br>
+    After break, we will meet and start play testing and refining the story.  We will also create more image types, and
+    work on the ending.    </br>
+     </br>
+    By Thursday, we will have our game finished, and ready to be displayed.   </br>
+     </br>
+    Feature list  </br>
+    1. Modular room system </br>
+    2. Flashlight </br>
+    3. Heartbeat animation </br>
+    4. Lightning flashes </br>
+    5. Sound / music </br>
+    6. Monsters </br>
+    7. Picking up / putting down objects </br>
+    8. Moving through the world (clicking / WASD?) </br>
+    9. Monster animation? </br>
+    10. Awesomeness </br>
