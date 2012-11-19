@@ -123,4 +123,8 @@ class ApplicationController < ActionController::Base
       render '/game.html.haml',:layout => false
     end
   end
+
+  def trappedinthevoid
+    render '/TrappedInTheVoid.html.haml'
+  end
 end

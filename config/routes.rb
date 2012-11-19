@@ -22,6 +22,7 @@ WebSite::Application.routes.draw do
   match '/asciiai/update' => 'asciiai#update'
 
   match '/stuckinthevoid/:patch' => 'application#stcukinthevoid', :constraints => { :patch => /\d*/ }
+  match '/trappedinthevoid' => 'application#trappedinthevoid'
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

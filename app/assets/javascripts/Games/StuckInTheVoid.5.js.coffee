@@ -19,7 +19,7 @@ G =
 
 curser = {x: 0,y: 0}
 auto_type = 'If you prick us#$$    do we not bleed?#$$If you tickle us#$$    do we not laugh?#$$$$If you poison us#$$    do we not die?##$$$$And##$$$$if you wrong us#$$    shall we not revenge?#$$$.$$$.$$$.'
-
+clear = false
 
 ###------------------------------------------ PS Events ----------------------------------------- ###
 PS.Init = ->
@@ -30,7 +30,7 @@ PS.Init = ->
   PS.BeadBorderColor PS.ALL,PS.ALL,0x000000
   PS.GridBGColor 0x0000
   PS.StatusFade false
-  PS.StatusText 'Stuck in the Void: toy 5'
+  PS.StatusText ''
   PS.StatusColor(0xffffff)
 
   PS.Clock(15)
@@ -64,6 +64,10 @@ PS.Tick = ->
     l = auto_type[0]
     auto_type = auto_type.substr(1)
     if l != '$' and l != '#'
+      if clear and l != ' '
+        PS.StatusText('')
+        clear = false
+      PS.StatusText(PS.StatusText()+l) unless clear
       PS.BeadGlyph curser.x,curser.y,l
       PS.AudioPlay 'fx_click' if l != ' '
       curser.x += 1
@@ -73,6 +77,7 @@ PS.Tick = ->
         if curser.y >= G.GRID.HEIGHT
           curser.y = 0
     else if l == '#'
+      clear = true
       curser.y += 1
       curser.x = 0
       if curser.y >= G.GRID.HEIGHT
