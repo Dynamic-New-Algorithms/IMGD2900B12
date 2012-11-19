@@ -158,7 +158,6 @@ build_current = function() {
         }
         af = 1;
         if (my_loc.x + 1 < Maze[0].length) {
-            alert((my_loc.x + 1)+','+(my_loc.y));
             af = Maze[my_loc.x + 1][my_loc.y];
         }
         if (al === 1) {
@@ -173,7 +172,6 @@ build_current = function() {
         if (ar === 0) {
             my_room.layers.push(a_r_o.layer);
         }
-        alert(af);
         if (af === 0) {
             bl = 1;
             if (my_loc.y - 1 >= 0 && my_loc.x + 1 < Maze[0].length) {
@@ -504,6 +502,9 @@ build_current = function() {
             return my_room.layers.push(a_c.layer);
         }
     }
+    PS.Debug('alpha = {left: ' + al+', right: ' + ar + ', center: ' + af + '}\n');
+    PS.Debug('beta = {left: ' + bl+', right: ' + br + ', center: ' + bf + '}\n');
+    PS.Debug('gama = {left: ' + cl+', right: ' + cr + ', center: ' + cf + '}\n');
 };
 
 /*------------------------------------------ Global Vars -----------------------------------------
