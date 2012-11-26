@@ -94,7 +94,6 @@ PS.Tick = ->
     PS.AudioPlay 'perc_drum_tom4'
     high_low = 2
 
-
   PS.BeadColor 1,1,Math.floor(100*(1-f(x)))+125,0,Math.floor(20*(f(x)))
   PS.BeadBorderWidth 1,1,Math.floor((1-f(x)) * 50)
 
