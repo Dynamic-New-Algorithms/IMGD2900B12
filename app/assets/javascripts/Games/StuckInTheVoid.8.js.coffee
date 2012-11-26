@@ -13,9 +13,9 @@ class Light
   get_color: (x,y,scale) ->
     d = Math.sqrt(Math.pow((x-@x),2)+Math.pow((y-@y),2))
     a = 0
-    a = 1-10/(d/@r) if (d/@r) > 0
-    a = 1 if d == 0 and @r < 0.1
-    return Math.min(100*scale,Math.max(0,a*100))
+    a = 1-10/(d/@r*scale) if (d/@r*scale) > 0
+    a = 1 if d == 0 and @r*scale < 0.1
+    return Math.min(100,Math.max(0,a*100))
 
 class Player
   constructor: (x,y,fx,fy) ->
@@ -23,7 +23,7 @@ class Player
     @y = y
     @fx = fx
     @fy = fy
-    @health = 2
+    @health = 2.3
     @beat = 0
     @mx = 15
     @my = 15
@@ -36,10 +36,10 @@ class Player
       @high_low = 0
       @beat = 0
     if @beat >= 68 and @high_low == 0
-      #PS.AudioPlay 'perc_drum_tom3'
+      PS.AudioPlay 'perc_drum_tom3'
       @high_low = 1
     if @beat >= 89 and @high_low == 1
-      #PS.AudioPlay 'perc_drum_tom4'
+      PS.AudioPlay 'perc_drum_tom4'
       @high_low = 2
     if PS.BeadData(x,y) == -1
       PS.BeadData x,y,PS.BeadColor(x,y)
@@ -213,7 +213,7 @@ class World
         if @player.x+ply_h1.l >= 0 and @player.x+ply_h1.l < @data[@player.y+ply_h1.po].length
           offsets[(ply_count + 1)%offsets.length].lights.push(ply_count) if ply_count%3 == 0
           offsets[(ply_count - 1)%offsets.length].lights.push(ply_count) if ply_count%3 != 0
-          h1 =  @data[@player.y+ply_h1.po][@player.x+ply_h1.l][ply_h1.level][ply_h1.pos][type] == null
+          h1 =  @data[@player.y+ply_h1.po][@player.x+ply_h1.l][ply_h1.level][ply_h1.pos].wall == null
       #h2
       if @player.y+ply_h2.po >= 0 and @player.y+ply_h2.po < @data.length
         if @player.x+ply_h2.l >= 0 and @player.x+ply_h2.l < @data[@player.y+ply_h2.po].length
@@ -221,26 +221,26 @@ class World
             offsets[(ply_count + 2)%offsets.length].lights.push(ply_count) if ply_count%3 == 0
             offsets[(ply_count + 1)%offsets.length].lights.push(ply_count) if ply_count%3 == 1
             offsets[(ply_count - 2)%offsets.length].lights.push(ply_count) if ply_count%3 == 2
-          h2 =  @data[@player.y+ply_h2.po][@player.x+ply_h2.l][ply_h2.level][ply_h2.pos][type] == null
+          h2 =  @data[@player.y+ply_h2.po][@player.x+ply_h2.l][ply_h2.level][ply_h2.pos].wall == null
           h2 = h2 and h1 if ply.pos != 'center'
       #v1  
       if @player.y+ply_v1.po >= 0 and @player.y+ply_v1.po < @data.length
         if @player.x+ply_v1.l >= 0 and @player.x+ply_v1.l < @data[@player.y+ply_v1.po].length
           if ply.level != 'alpha'
             offsets[((ply_count + 3)%offsets.length)].lights.push(ply_count)
-            v1 =  @data[@player.y+ply_v1.po][@player.x+ply_v1.l][ply_v1.level][ply_v1.pos][type] == null
+            v1 = @data[@player.y+ply_v1.po][@player.x+ply_v1.l][ply_v1.level][ply_v1.pos].wall == null
           else
             if @player.y+ply_v2.po >= 0 and @player.y+ply_v2.po < @data.length
               if @player.x+ply_v2.l >= 0 and @player.x+ply_v2.l < @data[@player.y+ply_v2.po].length
-                if @data[@player.y+ply_v2.po][@player.x+ply_v2.l][ply_v2.level][ply_v2.pos][type] == null
+                if @data[@player.y+ply_v2.po][@player.x+ply_v2.l][ply_v2.level][ply_v2.pos].wall == null
                   offsets[((ply_count + 3)%offsets.length)].lights.push(ply_count)
-                  v1 =  @data[@player.y+ply_v1.po][@player.x+ply_v1.l][ply_v1.level][ply_v1.pos][type] == null and @data[@player.y+ply_v2.po][@player.x+ply_v2.l][ply_v2.level][ply_v2.pos][type] == null
+                  v1 =  @data[@player.y+ply_v1.po][@player.x+ply_v1.l][ply_v1.level][ply_v1.pos].wall == null and @data[@player.y+ply_v2.po][@player.x+ply_v2.l][ply_v2.level][ply_v2.pos].wall == null
       #v2    
       if @player.y+ply_v2.po >= 0 and @player.y+ply_v2.po < @data.length
         if @player.x+ply_v2.l >= 0 and @player.x+ply_v2.l < @data[@player.y+ply_v2.po].length
           if ply.level != 'gama' or v1
             offsets[((ply_count + 6)%offsets.length)].lights.push(ply_count)
-          v2 =  @data[@player.y+ply_v2.po][@player.x+ply_v2.l][ply_v2.level][ply_v2.pos][type] == null
+          v2 =  @data[@player.y+ply_v2.po][@player.x+ply_v2.l][ply_v2.level][ply_v2.pos].wall == null
           v2 = v2 and v1 if ply.level == 'gama'
       #d1 
       if @player.y+ply_d1.po >= 0 and @player.y+ply_d1.po < @data.length
