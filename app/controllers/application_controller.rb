@@ -115,7 +115,7 @@ class ApplicationController < ActionController::Base
 
   def stcukinthevoid
     if params[:format] == 'js'
-      render :file => 'app/assets/javascripts/Games/StuckInTheVoid.' + params[:patch] + '.js'
+      render :file => 'app/assets/javascripts/Games/StuckInTheVoid.' + params[:patch] + '.js',:formats => [:js]
     else
       @patch = params[:patch]
       @game = 'Stuck in the Void'

@@ -180,7 +180,7 @@ PS.Click = (x, y, data) ->
   "use strict"
   PS.DebugClear()
 
-  PS.ImageLoad "/assets/Void/test_set/c_r_wall.png", loader,4
+  PS.ImageLoad "/assets/Void/test_alpha.png", loader,4
 
 
 

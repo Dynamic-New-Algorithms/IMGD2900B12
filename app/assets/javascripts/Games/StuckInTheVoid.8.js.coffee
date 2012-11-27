@@ -9,12 +9,14 @@ class Light
     @x = x
     @y = y
     @r = r
+    @diff = 1.6
 
   get_color: (x,y,scale) ->
-    d = Math.sqrt(Math.pow((x-@x),2)+Math.pow((y-@y),2))
+    scale = scale * @diff
+    d = Math.sqrt(Math.pow((x-@x),2)+Math.pow((y-@y),2)) * (1/scale)
+    d = (1/scale)*@diff if d == 0
     a = 0
-    a = 1-10/(d/@r*scale) if (d/@r*scale) > 0
-    a = 1 if d == 0 and @r*scale < 0.1
+    a = 1-1/(d/@r*(1/scale)) if (d/@r*(1/scale)) > 0
     return Math.min(100,Math.max(0,a*100))
 
 class Player
@@ -33,6 +35,7 @@ class Player
   draw_heart: (x,y) ->
     @beat += @health
     if @beat >= 138
+      @healeth = (@health + 2/3) / 2
       @high_low = 0
       @beat = 0
     if @beat >= 68 and @high_low == 0
@@ -177,99 +180,48 @@ class World
       ]
     #figure out lights
     ply_count = 0
-    for ply in offsets
-      ply.lights.push(ply_count)
-      v1 = false
-      v2 = false
-      h1 = false
-      h2 = false
-      ply_h1 = light_offsets[(ply_count + 1)%light_offsets.length]
-      ply_h1 = light_offsets[(ply_count - 1)%light_offsets.length] if ply_count%3 != 0
-      
-      ply_h2 = light_offsets[(ply_count + 2)%light_offsets.length]
-      ply_h2 = light_offsets[(ply_count + 1)%light_offsets.length] if ply_count%3 == 1
-      ply_h2 = light_offsets[(ply_count - 2)%light_offsets.length] if ply_count%3 == 2
-      
-      ply_v1 = light_offsets[((ply_count + 3)%light_offsets.length)%light_offsets.length]
-      
-      ply_v2 = light_offsets[((ply_count + 6)%light_offsets.length)%light_offsets.length]
+    for ply in light_offsets
 
-      ply_d1 = light_offsets[((ply_count + 3)%light_offsets.length + 1)%light_offsets.length]
-      ply_d1 = light_offsets[((ply_count + 3)%light_offsets.length - 1)%light_offsets.length] if ply_count%3 != 0
+      sx = @player.y+ply.po
+      h_left = 0
+      h_right = 0
+      sy = @player.x+ply.l
+      v_up = 0
+      v_down = 0
+      if sx >=0 and sx < @data.length
+        if sy >= 0 and sy <  @data[sx].length
+          #PS.Debug("#{ply.level},#{ply.pos} ---- (#{sx},#{sy})\n")
+          #h
+          while sx-h_left > 0
+            h_left = h_left + 1
+            if @data[sx-h_left][sy][ply.level][ply.pos].wall != null
+              break
+          while sx+h_right < @data.length-1
+            h_right = h_right + 1
+            if @data[sx+h_right][sy][ply.level][ply.pos].wall != null
+              break
+          #v
+          while sy-v_up > 0
+            v_up = v_up + 1
+            if @data[sx][sy-v_up][ply.level][ply.pos].wall != null
+              break
 
-      ply_d2 = light_offsets[((ply_count + 3)%light_offsets.length + 2)%light_offsets.length]
-      ply_d2 = light_offsets[((ply_count + 3)%light_offsets.length + 1)%light_offsets.length] if ply_count%3 == 1
-      ply_d2 = light_offsets[((ply_count + 3)%light_offsets.length - 2)%light_offsets.length] if ply_count%3 == 2
-      
-      ply_d3 = light_offsets[((ply_count + 6)%light_offsets.length + 1)%light_offsets.length]
-      ply_d3 = light_offsets[((ply_count + 6)%light_offsets.length - 1)%light_offsets.length] if ply_count%3 != 0
+          while sy+v_down <  @data[sx].length-1
+            v_down = v_down + 1
+            if @data[sx][sy+v_down][ply.level][ply.pos].wall != null
+              break
 
-      ply_d4 = light_offsets[((ply_count + 6)%light_offsets.length + 2)%light_offsets.length]
-      ply_d4 = light_offsets[((ply_count + 6)%light_offsets.length + 1)%light_offsets.length] if ply_count%3 == 1
-      ply_d4 = light_offsets[((ply_count + 6)%light_offsets.length - 2)%light_offsets.length] if ply_count%3 == 2
+          #PS.Debug((sx-h_left) + " \<= x \<= " + (sx+h_right) + ' and ' + (sy-v_up) + " \<= y \<= " + (sy+v_down) + '\n')
+          for x in [(sx-h_left)..(sx+h_right)]
+            for y in [(sy-v_up)..(sy+v_down)]
 
-      #h1
-      if @player.y+ply_h1.po >= 0 and @player.y+ply_h1.po < @data.length
-        if @player.x+ply_h1.l >= 0 and @player.x+ply_h1.l < @data[@player.y+ply_h1.po].length
-          offsets[(ply_count + 1)%offsets.length].lights.push(ply_count) if ply_count%3 == 0
-          offsets[(ply_count - 1)%offsets.length].lights.push(ply_count) if ply_count%3 != 0
-          h1 =  @data[@player.y+ply_h1.po][@player.x+ply_h1.l][ply_h1.level][ply_h1.pos].wall == null
-      #h2
-      if @player.y+ply_h2.po >= 0 and @player.y+ply_h2.po < @data.length
-        if @player.x+ply_h2.l >= 0 and @player.x+ply_h2.l < @data[@player.y+ply_h2.po].length
-          if ply.pos == 'center' or h1
-            offsets[(ply_count + 2)%offsets.length].lights.push(ply_count) if ply_count%3 == 0
-            offsets[(ply_count + 1)%offsets.length].lights.push(ply_count) if ply_count%3 == 1
-            offsets[(ply_count - 2)%offsets.length].lights.push(ply_count) if ply_count%3 == 2
-          h2 =  @data[@player.y+ply_h2.po][@player.x+ply_h2.l][ply_h2.level][ply_h2.pos].wall == null
-          h2 = h2 and h1 if ply.pos != 'center'
-      #v1  
-      if @player.y+ply_v1.po >= 0 and @player.y+ply_v1.po < @data.length
-        if @player.x+ply_v1.l >= 0 and @player.x+ply_v1.l < @data[@player.y+ply_v1.po].length
-          if ply.level != 'alpha'
-            offsets[((ply_count + 3)%offsets.length)].lights.push(ply_count)
-            v1 = @data[@player.y+ply_v1.po][@player.x+ply_v1.l][ply_v1.level][ply_v1.pos].wall == null
-          else
-            if @player.y+ply_v2.po >= 0 and @player.y+ply_v2.po < @data.length
-              if @player.x+ply_v2.l >= 0 and @player.x+ply_v2.l < @data[@player.y+ply_v2.po].length
-                if @data[@player.y+ply_v2.po][@player.x+ply_v2.l][ply_v2.level][ply_v2.pos].wall == null
-                  offsets[((ply_count + 3)%offsets.length)].lights.push(ply_count)
-                  v1 =  @data[@player.y+ply_v1.po][@player.x+ply_v1.l][ply_v1.level][ply_v1.pos].wall == null and @data[@player.y+ply_v2.po][@player.x+ply_v2.l][ply_v2.level][ply_v2.pos].wall == null
-      #v2    
-      if @player.y+ply_v2.po >= 0 and @player.y+ply_v2.po < @data.length
-        if @player.x+ply_v2.l >= 0 and @player.x+ply_v2.l < @data[@player.y+ply_v2.po].length
-          if ply.level != 'gama' or v1
-            offsets[((ply_count + 6)%offsets.length)].lights.push(ply_count)
-          v2 =  @data[@player.y+ply_v2.po][@player.x+ply_v2.l][ply_v2.level][ply_v2.pos].wall == null
-          v2 = v2 and v1 if ply.level == 'gama'
-      #d1 
-      if @player.y+ply_d1.po >= 0 and @player.y+ply_d1.po < @data.length
-        if @player.x+ply_d1.l >= 0 and @player.x+ply_d1.l < @data[@player.y+ply_d1.po].length
-          if h1 or v1
-            offsets[((ply_count + 3)%offsets.length + 1)%offsets.length].lights.push(ply_count) if ply_count%3 == 0
-            offsets[((ply_count + 3)%offsets.length - 1)%offsets.length].lights.push(ply_count) if ply_count%3 != 0
-      #d2
-      if @player.y+ply_d2.po >= 0 and @player.y+ply_d2.po < @data.length
-        if @player.x+ply_d2.l >= 0 and @player.x+ply_d2.l < @data[@player.y+ply_d2.po].length
-          if h2 or v1
-            offsets[((ply_count + 3)%offsets.length + 2)%offsets.length].lights.push(ply_count) if ply_count%3 == 0
-            offsets[((ply_count + 3)%offsets.length + 1)%offsets.length].lights.push(ply_count) if ply_count%3 == 1
-            offsets[((ply_count + 3)%offsets.length - 2)%offsets.length].lights.push(ply_count) if ply_count%3 == 2
-      #d3   
-      if @player.y+ply_d3.po >= 0 and @player.y+ply_d3.po < @data.length
-        if @player.x+ply_d3.l >= 0 and @player.x+ply_d3.l < @data[@player.y+ply_d3.po].length
-          if h1 or v2
-            offsets[((ply_count + 6)%offsets.length + 1)%offsets.length].lights.push(ply_count) if ply_count%3 == 0
-            offsets[((ply_count + 6)%offsets.length - 1)%offsets.length].lights.push(ply_count) if ply_count%3 != 0
-      #d4 
-      if @player.y+ply_d4.po >= 0 and @player.y+ply_d4.po < @data.length
-        if @player.x+ply_d4.l >= 0 and @player.x+ply_d4.l < @data[@player.y+ply_d4.po].length
-          if h2 or v1
-            offsets[((ply_count + 6)%offsets.length + 2)%offsets.length].lights.push(ply_count) if ply_count%3 == 0
-            offsets[((ply_count + 6)%offsets.length + 1)%offsets.length].lights.push(ply_count) if ply_count%3 == 1
-            offsets[((ply_count + 6)%offsets.length - 2)%offsets.length].lights.push(ply_count) if ply_count%3 == 2
-      ply_count = ply_count + 1
-      
+              #done witch diagonal checking
+              if true
+                d = Math.max(1,Math.sqrt(Math.pow((sx-x),2)+Math.pow((sy-y),2)))
+                offsets[ply_count].lights.push([x,y,d])
+                #PS.Debug(String([x,y,d])+'\n')
+      ply_count += 1
+
 
     for y in [0..31]
       for x in [0..31]
@@ -292,22 +244,16 @@ class World
                   light_a = 100
                   no_light = true
                   dddddd = ply.level + ', ' + ply.pos + ' -> '
-                  for light in ply.lights
-                    light = light % light_offsets.length
-                    dddddd = dddddd + '(' + light_offsets[light].level + ', ' + light_offsets[light].pos + ')['
-                    if @player.y+light_offsets[light].po >= 0 and @player.y+light_offsets[light].po < @data.length
-                      if @player.x+light_offsets[light].l >= 0 and @player.x+light_offsets[light].l < @data[@player.y+light_offsets[light].po].length
-                        dddddd = dddddd + ' Yurp ]; ' if @data[@player.y+light_offsets[light].po][@player.x+light_offsets[light].l].lights.length > 0
-                        dddddd = dddddd + ' Nope ]; ' if @data[@player.y+light_offsets[light].po][@player.x+light_offsets[light].l].lights.length == 0
-                        for al in @data[@player.y+light_offsets[light].po][@player.x+light_offsets[light].l].lights
-                          no_light = false
-                          if ply.level == 'alpha'
-                            light_a = light_a - (100-al.get_color(x,y,3/3))
-                          else if ply.level == 'beta'
-                            light_a = light_a - (100-al.get_color(x,y,2/3))
-                          else if ply.level == 'gama'
-                            light_a = light_a - (100-al.get_color(x,y,1/3))
-
+                  for light_pos in ply.lights
+                    dddddd = dddddd + ' Yurp ]; ' if @data[light_pos[0]][light_pos[1]].lights.length > 0
+                    dddddd = dddddd + ' Nope ]; ' if @data[light_pos[0]][light_pos[1]].lights.length == 0
+                    for al in @data[light_pos[0]][light_pos[1]].lights
+                      if @player.fx == 1 or @player.fy == 1
+                        no_light = false
+                        light_a = light_a - (100-al.get_color(x,y,1/light_pos[2]))
+                      else if @player.fx == -1 or @player.fy == -1
+                        no_light = false
+                        light_a = light_a - (100-al.get_color(32-x,y,1/light_pos[2]))
                   #alert dddddd + ' || ' + no_light
                   light_a = light_a - (100-my_light_a)
                   light_a = Math.min(Math.max(0,light_a),100)
@@ -322,6 +268,9 @@ class World
         img.data.push Math.floor(c.b)
         img.data.push Math.floor(c.a)
     PS.ImageBlit(img)
+    PS.BeadBorderColor my_light.x,my_light.y,PS.BeadColor(my_light.x,my_light.y)
+    PS.BeadBorderWidth my_light.x,my_light.y,0
+    PS.BeadData my_light.x,my_light.y,-1
 
 
 
@@ -339,19 +288,17 @@ debug = (response) ->
 
 
 ###------------------------------------------ Global Vars ----------------------------------------- ###
-w = DNA.VOID.example_wall
-f = DNA.VOID.example_floor
-l = DNA.VOID.example_light
-l.lights.push(new Light(10,10,1))
-
+w = DNA.VOID.brown_wall
+f = DNA.VOID.brown_floor
+debug(w.alpha.left.floor)
 world_data = [
   ([w,w,w,w,w,w,w,w,w,w,w,w,w,w,w]),
-  ([w,w,w,w,w,w,w,w,w,w,w,w,w,w,w]),
-  ([w,w,w,w,w,f,w,w,w,w,w,w,w,w,w]),
-  ([w,w,w,f,f,l,f,f,f,f,f,w,w,w,w]),
-  ([w,w,w,w,w,w,w,w,w,w,f,w,w,w,w]),
-  ([w,w,w,f,f,f,f,f,w,w,f,w,w,w,w]),
-  ([w,w,w,f,l,w,f,f,w,w,f,w,w,w,w]),
+  ([w,f,f,f,f,w,f,f,f,f,f,f,f,f,w]),
+  ([w,f,f,w,w,f,w,w,w,w,w,w,w,f,w]),
+  ([w,f,w,f,f,f,f,f,f,f,f,w,w,f,w]),
+  ([w,f,w,w,w,w,w,w,w,w,f,w,f,f,w]),
+  ([w,f,w,f,f,f,f,f,w,w,f,w,w,f,w]),
+  ([w,f,f,f,f,w,f,f,w,w,f,f,f,f,w]),
   ([w,w,w,f,f,f,f,f,w,w,f,w,w,w,w]),
   ([w,w,w,w,w,w,w,f,f,f,f,w,w,w,w]),
   ([w,w,w,w,w,w,w,w,w,w,w,w,w,w,w]),
@@ -386,7 +333,7 @@ PS.Click = (x, y, data) ->
   my_l.x = x
   my_l.y = y
   if my_l.r == 0
-    my_l.r = 0.5
+    my_l.r = 1
   else
     my_l.r = 0
   test_world.draw(my_l)
