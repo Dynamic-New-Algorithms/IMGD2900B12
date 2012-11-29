@@ -288,9 +288,8 @@ debug = (response) ->
 
 
 ###------------------------------------------ Global Vars ----------------------------------------- ###
-w = DNA.VOID.brown_wall
-f = DNA.VOID.brown_floor
-debug(w.alpha.left.floor)
+w = DNA.VOID.example_wall
+f = DNA.VOID.example_floor
 world_data = [
   ([w,w,w,w,w,w,w,w,w,w,w,w,w,w,w]),
   ([w,f,f,f,f,w,f,f,f,f,f,f,f,f,w]),
