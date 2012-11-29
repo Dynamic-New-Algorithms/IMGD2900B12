@@ -541,16 +541,13 @@ move_moster = () ->
     G.flicker.seq = ''
     while d >= 0
       for x in [0..Math.floor(Math.pow(1 + G.dificulty / 60,d))]
-        if Math.random() > d/5
+        if Math.random() < d/5
           G.flicker.seq += '1'
         else
           G.flicker.seq += '0'
       d -= 1
 
 
-  PS.Debug '-----------------\n'
-  PS.Debug px + ', ' + py + '\n'
-  PS.Debug mx + ', ' + my + '\n'
   if mx == px and my == py
     G.GRID.HEIGHT = 0
 
