@@ -415,19 +415,19 @@ draw_bright = () ->
   PS.BeadColor(PS.ALL,PS.ALL,0x000000)
   text = ['Not Visible',
     '...',
-    'Barly Visible',
+    'Barely Visible',
     '...',
     'Visible',
     '...',
     'Very Visible',
     '...',
-    'Extreamly Visible',
+    'Extremely Visible',
     '...',
     'Very Visible',
     '...',
     'Visible',
     '...',
-    'Barly Visible',
+    'Barley Visible',
     '...',
     'Not Visible']
 
@@ -452,7 +452,7 @@ draw_bright = () ->
       G.bright = x / 16
       draw_bright()
   y = text.length + 2
-  text = ' Enter the void. '
+  text = '❖ Enter the Void. ❖'
   x = Math.floor((31-text.length) / (2))
   for l in text
     PS.BeadColor x,y,0xffffff
@@ -466,6 +466,39 @@ draw_bright = () ->
       my_l.r = 0
       test_world.draw(my_l)
 
+    x = x + 1
+  #controlls
+  text = 'Move with WASD'
+  y += 2
+  x = Math.floor((31-text.length) / (2))
+  for l in text
+    PS.BeadColor x,y,0xffffff
+    PS.BeadGlyphColor x,y,0x000000
+    PS.BeadGlyph x,y,l
+    x = x + 1
+  text = 'M for map'
+  y += 2
+  x = Math.floor((31-text.length) / (2))
+  for l in text
+    PS.BeadColor x,y,0xffffff
+    PS.BeadGlyphColor x,y,0x000000
+    PS.BeadGlyph x,y,l
+    x = x + 1
+  text = 'Space bar to interact'
+  y += 2
+  x = Math.floor((31-text.length) / (2))
+  for l in text
+    PS.BeadColor x,y,0xffffff
+    PS.BeadGlyphColor x,y,0x000000
+    PS.BeadGlyph x,y,l
+    x = x + 1
+  text = 'Click for light'
+  y += 2
+  x = Math.floor((31-text.length) / (2))
+  for l in text
+    PS.BeadColor x,y,0xffffff
+    PS.BeadGlyphColor x,y,0x000000
+    PS.BeadGlyph x,y,l
     x = x + 1
 
 
@@ -481,7 +514,7 @@ draw_map = () ->
   PS.BeadGlyph test_world.player.x,test_world.player.y,'→' if test_world.player.fx == 1
 
 
-  PS.BeadColor Monster.x,Monster.y,0x22aaff
+  #PS.BeadColor Monster.x,Monster.y,0x22aaff
 
   PS.BeadGlyphColor 2,1,0x000000
   PS.BeadGlyph 2,1,'✘' if G.levers[0]
@@ -933,7 +966,7 @@ PS.Wheel = (dir) ->
 PS.Tick = ->
   "use strict"
   G.Tick += 1
-  if G.Tick >= G.music.next_note
+  if G.Tick >= G.music.next_note and (G.mode == 'game' or G.mode == 'note' or G.mode == 'map')
     i = G.music.scrores[G.music.score][G.music.current_index]
 
     oc = 4 + Number(i[0])
